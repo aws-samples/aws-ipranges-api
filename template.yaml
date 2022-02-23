@@ -267,7 +267,7 @@ Resources:
               ipv4_prefixes = list()
               if not ipv6_only:
                 for i in ipranges_json['prefixes']:
-                  if i['service'] in SERVICES and i['region'] in REGIONS and i['network_border_group'] in NETWORKS:
+                  if i['service'] in SERVICES and i['region'] in REGIONS and i['network_border_group'] in NETWORKS and i['ip_prefix'] not in ipv4_prefixes:
                     ipv4_prefixes.append(i['ip_prefix'])
                     if i['region'] not in aws_region:
                       aws_region.append(i['region'])
@@ -276,12 +276,12 @@ Resources:
                     if i['network_border_group'] not in aws_network:
                       aws_network.append(i['network_border_group'])
                 
-                prefixes = '\n'.join(sorted(list(set(ipv4_prefixes)), key = ipaddress.IPv4Network)) 
+                prefixes = '\n'.join(sorted(ipv4_prefixes, key = ipaddress.IPv4Network)) 
 
               ipv6_prefixes = list()  
               if not ipv4_only:
                 for i in ipranges_json['ipv6_prefixes']:
-                  if i['service'] in SERVICES and i['region'] in REGIONS and i['network_border_group'] in NETWORKS:
+                  if i['service'] in SERVICES and i['region'] in REGIONS and i['network_border_group'] in NETWORKS and i['ipv6_prefix'] not in ipv6_prefixes:
                     ipv6_prefixes.append(i['ipv6_prefix'])
                     if i['region'] not in aws_region:
                       aws_region.append(i['region'])
@@ -291,7 +291,7 @@ Resources:
                       aws_network.append(i['network_border_group'])
                 if len(prefixes) > 0:
                   prefixes += '\n'              
-                prefixes += '\n'.join(sorted(list(set(ipv6_prefixes)), key = ipaddress.IPv6Network))
+                prefixes += '\n'.join(sorted(ipv6_prefixes, key = ipaddress.IPv6Network))
 
               return {
                 'statusCode': 200,

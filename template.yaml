@@ -56,7 +56,8 @@ Resources:
         StackName: !Sub ${AWS::StackName}
         StackId: !Sub ${AWS::StackId}        
         LambdaFunction: !Ref lambdaFunctionName
-
+        GitHub: 'https://github.com/aws-samples/aws-ipranges-api'
+        
   apiRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
@@ -119,7 +120,7 @@ Resources:
         StackName: !Sub ${AWS::StackName}
         StackId: !Sub ${AWS::StackId}
         LambdaFunction: !Ref lambdaFunctionName
-        GitHub: https://github.com/aws-samples/aws-ipranges-api
+        GitHub: 'https://github.com/aws-samples/aws-ipranges-api'
 
   lambdaFunctionIamRole:
     Type: AWS::IAM::Role
@@ -274,8 +275,8 @@ Resources:
                       aws_service.append(i['service'])
                     if i['network_border_group'] not in aws_network:
                       aws_network.append(i['network_border_group'])
-
-                prefixes = '\n'.join(sorted(ipv4_prefixes, key = ipaddress.IPv4Network)) 
+                
+                prefixes = '\n'.join(sorted(list(set(ipv4_prefixes)), key = ipaddress.IPv4Network)) 
 
               ipv6_prefixes = list()  
               if not ipv4_only:
@@ -290,7 +291,7 @@ Resources:
                       aws_network.append(i['network_border_group'])
                 if len(prefixes) > 0:
                   prefixes += '\n'              
-                prefixes += '\n'.join(sorted(ipv6_prefixes, key = ipaddress.IPv6Network))
+                prefixes += '\n'.join(sorted(list(set(ipv6_prefixes)), key = ipaddress.IPv6Network))
 
               return {
                 'statusCode': 200,

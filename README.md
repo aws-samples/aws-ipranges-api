@@ -44,7 +44,7 @@ Use different URLs to return IP prefixes. Example
   - `/REGION/<REGION>` : prefixes for specific REGION, e.g. /REGION/ap-southeast-1
   - `/NETWORK/<NETWORK>` : prefixes for specific network border group, e.g. /NETWORK/us-east-1-nyc-1
 
-Append /IPv4.txt or /IPv6.txt to limit IP prefixes to IPv4 or IPv6 respectively
+Append `/IPv4.txt` or `/IPv6.txt` to limit IP prefixes to IPv4 or IPv6 respectively
 
 ## API Gateway Customisation
 Refer to [Amazon API Gateway documentation](https://docs.aws.amazon.com/apigateway/latest/developerguide/welcome.html) for HTTP API customisation options. Some examples include

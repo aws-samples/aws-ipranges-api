@@ -15,8 +15,8 @@ This project makes IP prefixes available as web feeds for dynamic updates by fir
 
 ## Deployment via CloudFormation
 To deploy via AWS [CloudFormation console](https://console.aws.amazon.com/cloudformation), use [Create Stack](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-console-create-stack.html) to upload `template.yaml` file. The template has default parameters values that you can change
-- `awsServices`: Name of AWS services to return by root URL separated by commas. Default value is **CLOUDFRONT_ORIGIN_FACING,ROUTE53_HEALTHCHECKS**
-- `lambdaFunctionName`: Lambda function name. Default value is **IPRanges-2-apiGW**
+- `awsServices`: Name of AWS services to return by root URL separated by commas. Default is **CLOUDFRONT_ORIGIN_FACING,ROUTE53_HEALTHCHECKS**
+- `lambdaFunctionName`: Lambda function name. Default is **IPRanges-2-apiGW**
 - `pythonRuntime`: Python 3 runtime version. Default is **python3.9**
 - `cpuArchitecture`: Instruction set architecture (x86_64 or ARM64). Default is **x86_64**
 
@@ -26,7 +26,7 @@ Go to Outputs tab to get `apiGatewayInvokeURL` value (in the form https://\<VALU
 ## Firewall Setup
 Firewalls that supports external intel/threat feed for IP prefixes updates include (but not limited to)
 - Palo Alto: [External Dynamic List](https://docs.paloaltonetworks.com/pan-os/10-1/pan-os-admin/policy/use-an-external-dynamic-list-in-policy/external-dynamic-list.html) 
-- Fortigate: [External Block List](https://docs.fortinet.com/document/fortigate/7.0.5/administration-guide/891236/external-blocklist-policy).
+- Fortigate: [External Block List](https://docs.fortinet.com/document/fortigate/7.0.5/administration-guide/891236/external-blocklist-policy)
 - pfSense: [URL Table Aliases](https://docs.netgate.com/pfsense/en/latest/firewall/aliases.html#url-table-aliases)
 - OPNsense: [URL Tables (IPs) Aliases](https://docs.opnsense.org/manual/aliases.html)
 
@@ -36,7 +36,7 @@ For Check Point users, AWS IP prefixes are available through [Updatable Objects]
 
 ## Output options
 Use different URLs to return IP prefixes. Example
-  - / : return CloudFront origin facing and R53 Health Checks  prefixes: customizable via **SERVICES** Lambda environment variables
+  - / : return CloudFront origin facing and R53 Health Checks  prefixes, customizable via **SERVICES** Lambda environment variable
   - /SERVICE : listing of available services, e.g. S3
   - /REGION : listing of available regions, e.g. ap-southeast-1
   - /NETWORK : listing of network border groups, e.g. us-east-1-atl-1

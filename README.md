@@ -31,19 +31,18 @@ Firewalls that supports external intel/threat feed for IP prefixes updates inclu
 - OPNsense: [URL Tables (IPs) Aliases](https://docs.opnsense.org/manual/aliases.html)
 
 Refer to vendor website documentation for configuration steps.
-  
 For Check Point users, AWS IP prefixes are available through [Updatable Objects](https://supportcenter.checkpoint.com/supportcenter/portal?eventSubmit_doGoviewsolutiondetails=&solutionid=sk131852)
 
 ## Output options
 Use different URLs to return IP prefixes. Example
-  - / : return CloudFront origin facing and R53 Health Checks  prefixes, customizable via **SERVICES** Lambda environment variable
-  - /SERVICE : listing of available services
-  - /REGION : listing of available regions
-  - /NETWORK : listing of network border groups which is a unique set of Availability Zones or Local Zones from where AWS advertises IP addresses
-  - /SERVICE/\<SERVICE\> : prefixes for specific SERVICE, e.g. /SERVICE/S3
-  - /SERVICE/\<SERVICE\>/\<REGION\>: prefixes for specific SERVICE and REGION, e.g. /SERVICE/EC2/us-east-1
-  - /REGION/\<REGION\> : prefixes for specific REGION, e.g. /REGION/ap-southeast-1
-  - /NETWORK/\<NETWORK\> : prefixes for specific network border group, e.g. /NETWORK/us-east-1-nyc-1
+  - `/` : return CloudFront origin facing and R53 Health Checks  prefixes, customizable via `SERVICES` Lambda environment variable
+  - `/SERVICE` : listing of available services
+  - `/REGION` : listing of available regions
+  - `/NETWORK` : listing of network border groups which is a unique set of Availability Zones or Local Zones from where AWS advertises IP addresses
+  - `/SERVICE/<SERVICE>` : prefixes for specific SERVICE, e.g. /SERVICE/S3
+  - `/SERVICE/<SERVICE>/<REGION>` : prefixes for specific SERVICE and REGION, e.g. /SERVICE/EC2/us-east-1
+  - `/REGION/<REGION>` : prefixes for specific REGION, e.g. /REGION/ap-southeast-1
+  - `/NETWORK/<NETWORK>` : prefixes for specific network border group, e.g. /NETWORK/us-east-1-nyc-1
 
 Append /IPv4.txt or /IPv6.txt to limit IP prefixes to IPv4 or IPv6 respectively
 

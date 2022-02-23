@@ -1,13 +1,13 @@
 ## AWS-IPRanges-API
 
-[Serverless](https://aws.amazon.com/serverless/) web portal based on [Amazon API Gateway](https://aws.amazon.com/api-gateway/) and [AWS Lambda](https://aws.amazon.com/lambda/) that output IP Prefixes from AWS ip-ranges.json for use by firewalls and other applications
+[Serverless](https://aws.amazon.com/serverless/) web portal based on [Amazon API Gateway](https://aws.amazon.com/api-gateway/) and [AWS Lambda](https://aws.amazon.com/lambda/) that outputs IP Prefixes from AWS ip-ranges.json for use by firewalls and other applications
 
 ## Description
-AWS [publishes](https://docs.aws.amazon.com/general/latest/gr/aws-ip-ranges.html) its IP ranges in json format through [ip-ranges.json](https://ip-ranges.amazonaws.com/ip-ranges.json). The IP prefixes are commonly used by firewalls for network access control. A common use case is [CloudFront](https://aws.amazon.com/cloudfront/) with origin as customer's on-premise web server where customers [protect origin](https://docs.aws.amazon.com/whitepapers/latest/secure-content-delivery-amazon-cloudfront/protecting-your-origin-by-allowing-access-to-cloudfront-only.html) by only allowing CloudFront (and if in use Route 53 Health Checks) IP address ranges inbound access to web server using on-premise firewall policies.
+AWS [publishes](https://docs.aws.amazon.com/general/latest/gr/aws-ip-ranges.html) its IP ranges in json format through [ip-ranges.json](https://ip-ranges.amazonaws.com/ip-ranges.json). The IP prefixes are commonly used by firewalls for network access control. A common use case is [CloudFront](https://aws.amazon.com/cloudfront/) with origin as customer's on-premise web server where customers [protect origin](https://docs.aws.amazon.com/whitepapers/latest/secure-content-delivery-amazon-cloudfront/protecting-your-origin-by-allowing-access-to-cloudfront-only.html) by only allowing CloudFront (and if in use Route 53 Health Checks) IP address ranges inbound access to on-premise web server using firewall policies.
 
-Typically, the firewall administrator will extract out desired IP prefixes from ip-ranges.json for use in their firewall rules. The IP prefixes need to be updated whenever there are changes and customer can subscribe to [AWS IP address ranges notifications](https://docs.aws.amazon.com/general/latest/gr/aws-ip-ranges.html#subscribe-notifications)
+Typically, the firewall administrator will extract out required IP prefixes from ip-ranges.json for use in their firewall rules. The IP prefixes need to be updated whenever there are changes and customer can subscribe to [AWS IP address ranges notifications](https://docs.aws.amazon.com/general/latest/gr/aws-ip-ranges.html#subscribe-notifications)
 
-This project makes IP prefixes available as web feeds for dynamic updates by firewalls. Users have the option to filter the IP prefixes by service, region and network border group (such as [AWS Local Zones](https://aws.amazon.com/about-aws/global-infrastructure/localzones/locations)) and in combined IPv4 and IPv6, IPv4 only or IPv6 only format. Entire solution is serverless, and can be deployed via a single CloudFormation file. 
+This project makes IP prefixes available as web feeds for dynamic updates by firewalls. Users have the option to filter the IP prefixes by service, region and network border group and in combined IPv4 and IPv6, IPv4 only or IPv6 only format. Entire solution is serverless, and can be deployed via a single CloudFormation file. 
 
 ## Architecture Diagram
 <img width="1340" alt="image" src="https://user-images.githubusercontent.com/88474310/155283397-b34594ea-213d-4b8f-b391-6081087f1743.png">
@@ -37,12 +37,12 @@ For Check Point users, AWS IP prefixes are available through [Updatable Objects]
 ## Output options
 Use different URLs to return IP prefixes. Example
   - / : return CloudFront origin facing and R53 Health Checks  prefixes, customizable via **SERVICES** Lambda environment variable
-  - /SERVICE : listing of available services, e.g. S3
-  - /REGION : listing of available regions, e.g. ap-southeast-1
-  - /NETWORK : listing of network border groups, e.g. us-east-1-atl-1
+  - /SERVICE : listing of available services
+  - /REGION : listing of available regions
+  - /NETWORK : listing of network border groups which is a unique set of Availability Zones or Local Zones from where AWS advertises IP addresses
   - /SERVICE/\<SERVICE\> : prefixes for specific SERVICE, e.g. /SERVICE/S3
   - /SERVICE/\<SERVICE\>/\<REGION\>: prefixes for specific SERVICE and REGION, e.g. /SERVICE/EC2/us-east-1
-  - /REGION/\<REGION\> : prefixes for REGION, e.g. /REGION/eu-west-1
+  - /REGION/\<REGION\> : prefixes for specific REGION, e.g. /REGION/ap-southeast-1
   - /NETWORK/\<NETWORK\> : prefixes for specific network border group, e.g. /NETWORK/us-east-1-nyc-1
 
 Append /IPv4.txt or /IPv6.txt to limit IP prefixes to IPv4 or IPv6 respectively

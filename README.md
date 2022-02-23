@@ -20,7 +20,7 @@ To deploy via AWS [CloudFormation console](https://console.aws.amazon.com/cloudf
 - `pythonRuntime`: Python 3 runtime version. Default is **python3.9**
 - `cpuArchitecture`: Instruction set architecture (x86_64 or ARM64). Default is **x86_64**
 
-Go to Outputs tab to get `apiGatewayInvokeURL` value (in the form https://\<VALUE\>.execute-api.\<REGION\>.amazonaws.com) for use by firewall. Refer to [Output options](https://github.com/aws-samples/aws-ipranges-api#output-options) below for more details.
+Go to Outputs tab to get `apiGatewayInvokeURL` value (in the form https://\<VALUE\>.execute-api.\<REGION\>.amazonaws.com) for use by firewall. Refer to [Output options](#output-options) below for more details.
 
   
 ## Firewall Setup

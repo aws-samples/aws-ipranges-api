@@ -1,0 +1,322 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Serverless (API Gateway) website that returns AWS IP prefixes from ip-ranges.json (see https://github.com/aws-samples/aws-ipranges-api)
+
+Metadata:
+  License:
+    Description: >
+      Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+      SPDX-License-Identifier: MIT-0
+      
+      Permission is hereby granted, free of charge, to any person obtaining a copy of this
+      software and associated documentation files (the "Software"), to deal in the Software
+      without restriction, including without limitation the rights to use, copy, modify,
+      merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+      permit persons to whom the Software is furnished to do so.
+      
+      THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+      INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+      PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+      HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+      OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+
+Parameters:
+  lambdaFunctionName:
+    Type: String
+    AllowedPattern: "[a-zA-Z0-9]+[a-zA-Z0-9-]+[a-zA-Z0-9]+"
+    Description: Name of Lambda function used by API Gateway
+    Default: IPRanges-2-apiGW
+  pythonRuntime:
+    Type: String
+    AllowedPattern: "python3\\.\\d{1,2}"
+    Description: Python 3 runtime version
+    Default: python3.9
+  cpuArchitecture:
+    Type: String
+    AllowedValues:
+      - x86_64
+      - arm64
+    Description: Instruction set architecture (Intel/AMD or Graviton)
+    Default: x86_64
+  awsServices:
+    Type: String
+    Default: CLOUDFRONT_ORIGIN_FACING,ROUTE53_HEALTHCHECKS
+    Description: Name of AWS services to retrieve, separated by commas (see https://docs.aws.amazon.com/general/latest/gr/aws-ip-ranges.html)
+
+Resources:
+  apiGateway:
+    Type: AWS::ApiGatewayV2::Api
+    DependsOn: lambdaFunction
+    Properties:
+      Name: !Sub "${AWS::StackName}-apiGateway"
+      Description: !Sub "[${AWS::StackName}] - returns AWS IP prefixes from ip-ranges.json via lambda function [${lambdaFunctionName}]"
+      ProtocolType: HTTP
+      Tags: 
+        StackName: !Sub ${AWS::StackName}
+        StackId: !Sub ${AWS::StackId}        
+        LambdaFunction: !Ref lambdaFunctionName
+
+  apiRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref apiGateway
+      RouteKey: '$default'
+      AuthorizationType: NONE
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref apiGatewayIntegration
+  
+  # See https://docs.aws.amazon.com/lambda/latest/dg/services-apigateway.html#apigateway-permissions
+  apiTriggerPermission:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt lambdaFunction.Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Join
+        - ''
+        - - 'arn:aws:execute-api:'
+          - !Ref 'AWS::Region'
+          - ':'
+          - !Ref 'AWS::AccountId'
+          - ':'
+          - !Ref apiGateway
+          - '/*'
+
+  # Uri at https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-custom-integrations.html
+  apiGatewayIntegration:
+    Type: 'AWS::ApiGatewayV2::Integration'
+    Properties:
+      ApiId: !Ref apiGateway
+      Description: Integration with lambda function !Ref lambdaFunctionName
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !Join
+        - ''
+        - - 'arn:aws:apigateway:'
+          - !Ref 'AWS::Region'
+          - ':lambda:path/2015-03-31/functions/'
+          - !GetAtt lambdaFunction.Arn
+          - /invocations
+      IntegrationMethod: POST
+      PayloadFormatVersion: '2.0'
+      TimeoutInMillis: 5000
+  
+  # Account limits at https://docs.aws.amazon.com/apigateway/latest/developerguide/limits.html#apigateway-account-level-limits-table
+  apiStage:
+    Type: 'AWS::ApiGatewayV2::Stage'
+    Properties:
+      StageName: $default
+      Description: Prod Stage
+      AutoDeploy: true
+      ApiId: !Ref apiGateway
+      DefaultRouteSettings:
+        DetailedMetricsEnabled: true
+        #ThrottlingBurstLimit: 50
+        #ThrottlingRateLimit: 10
+      Tags: 
+        StackName: !Sub ${AWS::StackName}
+        StackId: !Sub ${AWS::StackId}
+        LambdaFunction: !Ref lambdaFunctionName
+        GitHub: https://github.com/aws-samples/aws-ipranges-api
+
+  lambdaFunctionIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument: 
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Policies:
+        - PolicyName: BasicLambdaFunctionPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+            - Effect: Allow
+              Action:
+              - logs:CreateLogGroup
+              Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*
+            - Effect: Allow
+              Action:
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+              Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${lambdaFunctionName}:*
+
+  lambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: !Sub "[${AWS::StackName}] - Returns AWS IP prefixes via API Gateway"
+      FunctionName: !Ref lambdaFunctionName
+      Handler: "index.lambda_handler"
+      MemorySize: 128
+      Role: !GetAtt lambdaFunctionIamRole.Arn
+      Environment:
+        Variables:
+          SERVICES: !Ref awsServices
+      Runtime: !Ref pythonRuntime 
+      Timeout: 5
+      Architectures:
+      - !Ref cpuArchitecture
+      Code:
+        ZipFile: |
+            # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+            # SPDX-License-Identifier: MIT-0
+            
+            import os
+            import json
+            from urllib import request
+            import ipaddress
+
+            # AWS services to return for default API
+            default_services = os.getenv('SERVICES', 'CLOUDFRONT_ORIGIN_FACING,ROUTE53_HEALTHCHECKS').split(',')
+            if default_services == ['']: 
+              default_services = ['CLOUDFRONT_ORIGIN_FACING','ROUTE53_HEALTHCHECKS']
+
+            # See https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html for payload format
+            def lambda_handler(event, context):  
+            
+              # load ip-ranges.json
+              response = request.urlopen('https://ip-ranges.amazonaws.com/ip-ranges.json')
+              data = response.read()
+              ipranges_json = json.loads(data)
+              
+              url = event['requestContext']['http']['path']
+
+              # available aws services/regions/network_border_groups
+              all_aws_services = list()
+              all_aws_regions = list()
+              all_aws_networks = list()
+
+              for i in ipranges_json['prefixes']:
+                if i['service'] not in all_aws_services:
+                  all_aws_services.append(i['service'])
+                if i['region'] not in all_aws_regions:
+                  all_aws_regions.append(i['region'])
+                if i['network_border_group'] not in all_aws_networks:
+                  all_aws_networks.append(i['network_border_group'])
+              
+
+              args = url.split('/')
+              responseBody = ''
+              
+              # SERVICES and REGIONS to filter by?            
+              SERVICES = all_aws_services.copy()
+              REGIONS = all_aws_regions.copy()
+              NETWORKS = all_aws_networks.copy()              
+              # return list of all prefixes / services / regions / network_border_groups
+              if len(args) == 2:
+                SERVICES = default_services
+                if args[1].upper() == 'SERVICE':
+                  responseBody = all_aws_services
+                elif args[1].upper() == 'REGION':
+                  responseBody = all_aws_regions
+                elif args[1].upper() == 'NETWORK':
+                  responseBody = all_aws_networks                
+                if responseBody != '':
+                  return {
+                    'statusCode': 200,
+                    'body': '\n'.join(sorted(responseBody)),
+                    "headers": {
+                      "content-type": "text/plain",
+                      "path" : url,
+                      "syncToken": ipranges_json['syncToken'],
+                      "createDate": ipranges_json['createDate']
+                      }        
+                  }
+              elif len(args) >= 3:
+                # /SERVICE/<SERVICE>/<REGION>
+                if args[1].upper()=='SERVICE' and args[2] in all_aws_services:
+                  SERVICES = [args[2]]                  
+                  if len(args) >=4 and args[3] in all_aws_regions:
+                    REGIONS = [args[3]]
+                # /REGION/<REGION>/<SERVICE>
+                elif args[1].upper()=='REGION' and args[2] in all_aws_regions:
+                  REGIONS = [args[2]]
+                  if len(args) >=4 and args[3] in all_aws_services:
+                    SERVICES= [args[3]]
+                # /NETWORK/<NETWORK>/<SERVICE>
+                elif args[1].upper()=='NETWORK' and args[2] in all_aws_networks:
+                  NETWORKS = [args[2]]
+                  if len(args) >=4 and args[3] in all_aws_services:
+                    SERVICES= [args[3]]
+                else:
+                  return {
+                    'statusCode': 404,
+                    'body': 'Not Found!',
+                    "headers": {
+                      "content-type": "text/html"                 
+                    }        
+                  }                  
+                
+              # IPv4 / IPv6 only? : 
+              ipv4_only = url.upper().endswith('/IPV4.TXT')
+              ipv6_only = url.upper().endswith('/IPV6.TXT')              
+
+              prefixes = ''              
+              aws_region = list()
+              aws_service = list()
+              aws_network = list()
+
+              ipv4_prefixes = list()
+              if not ipv6_only:
+                for i in ipranges_json['prefixes']:
+                  if i['service'] in SERVICES and i['region'] in REGIONS and i['network_border_group'] in NETWORKS:
+                    ipv4_prefixes.append(i['ip_prefix'])
+                    if i['region'] not in aws_region:
+                      aws_region.append(i['region'])
+                    if i['service'] not in aws_service:
+                      aws_service.append(i['service'])
+                    if i['network_border_group'] not in aws_network:
+                      aws_network.append(i['network_border_group'])
+
+                prefixes = '\n'.join(sorted(ipv4_prefixes, key = ipaddress.IPv4Network)) 
+
+              ipv6_prefixes = list()  
+              if not ipv4_only:
+                for i in ipranges_json['ipv6_prefixes']:
+                  if i['service'] in SERVICES and i['region'] in REGIONS and i['network_border_group'] in NETWORKS:
+                    ipv6_prefixes.append(i['ipv6_prefix'])
+                    if i['region'] not in aws_region:
+                      aws_region.append(i['region'])
+                    if i['service'] not in aws_service:
+                      aws_service.append(i['service'])
+                    if i['network_border_group'] not in aws_network:
+                      aws_network.append(i['network_border_group'])
+                if len(prefixes) > 0:
+                  prefixes += '\n'              
+                prefixes += '\n'.join(sorted(ipv6_prefixes, key = ipaddress.IPv6Network))
+
+              return {
+                'statusCode': 200,
+                'body': prefixes,
+                "headers": {
+                  "content-type": "text/plain",
+                  "aws-service" : ','.join(sorted(aws_service)),
+                  "aws-region" : ','.join(sorted(aws_region)),
+                  "aws-network" : ','.join(sorted(aws_network)),
+                  "path" : url,
+                  "syncToken": ipranges_json['syncToken'],
+                  "createDate": ipranges_json['createDate']                  
+                  }        
+                }
+      Tags:
+        - Key: StackName
+          Value: !Sub ${AWS::StackName}
+        - Key: StackId
+          Value: !Sub ${AWS::StackId}
+        - Key: GitHub
+          Value: https://github.com/aws-samples/aws-ipranges-api
+        - Key: Description
+          Value: Returns AWS IP prefixes from ip-ranges.json
+
+Outputs:
+  apiGatewayInvokeURL:
+    Value: !GetAtt apiGateway.ApiEndpoint
+
+

@@ -30,7 +30,7 @@ Firewalls that supports external intel/threat feed for IP prefixes updates inclu
 - pfSense: [URL Table Aliases](https://docs.netgate.com/pfsense/en/latest/firewall/aliases.html#url-table-aliases)
 - OPNsense: [URL Tables (IPs) Aliases](https://docs.opnsense.org/manual/aliases.html)
 
-Refer to vendor website documentation on configuration steps.
+Refer to vendor website documentation for configuration steps.
   
 For Check Point users, AWS IP prefixes are available through [Updatable Objects](https://supportcenter.checkpoint.com/supportcenter/portal?eventSubmit_doGoviewsolutiondetails=&solutionid=sk131852)
 

@@ -22,11 +22,20 @@ Metadata:
 
 
 Parameters:
+  allowNetworks:
+    Type: String
+    Description: Source Internet IP subnets that are authorized to use API Gateway, separated by commas (e.g. 1.2.3.4/32,100.0.0.0/24)
+    Default: 0.0.0.0/0
   lambdaFunctionName:
     Type: String
     AllowedPattern: "[a-zA-Z0-9]+[a-zA-Z0-9-]+[a-zA-Z0-9]+"
     Description: Name of Lambda function used by API Gateway
-    Default: IPRanges-2-apiGW
+    Default: aws-ipranges-api
+  lambdaAuthorizerFunctionName:
+    Type: String
+    AllowedPattern: "[a-zA-Z0-9]+[a-zA-Z0-9-]+[a-zA-Z0-9]+"
+    Description: Name of Lambda function used by API Gateway Authorizer
+    Default: aws-ipranges-api-authorizer
   pythonRuntime:
     Type: String
     AllowedPattern: "python3\\.\\d{1,2}"
@@ -38,7 +47,7 @@ Parameters:
       - x86_64
       - arm64
     Description: Instruction set architecture (Intel/AMD or Graviton)
-    Default: x86_64
+    Default: arm64
   awsServices:
     Type: String
     Default: CLOUDFRONT_ORIGIN_FACING,ROUTE53_HEALTHCHECKS
@@ -47,7 +56,9 @@ Parameters:
 Resources:
   apiGateway:
     Type: AWS::ApiGatewayV2::Api
-    DependsOn: lambdaFunction
+    DependsOn: 
+      - lambdaFunction
+      - lambdaAuthorizerFunction
     Properties:
       Name: !Sub "${AWS::StackName}-apiGateway"
       Description: !Sub "[${AWS::StackName}] - returns AWS IP prefixes from ip-ranges.json via lambda function [${lambdaFunctionName}]"
@@ -63,7 +74,8 @@ Resources:
     Properties:
       ApiId: !Ref apiGateway
       RouteKey: '$default'
-      AuthorizationType: NONE
+      AuthorizationType: CUSTOM
+      AuthorizerId: !Ref apiAuthorizer
       Target: !Join
         - /
         - - integrations
@@ -316,8 +328,121 @@ Resources:
         - Key: Description
           Value: Returns AWS IP prefixes from ip-ranges.json
 
+  apiAuthorizer:
+    Type: AWS::ApiGatewayV2::Authorizer
+    Properties: 
+      ApiId: !Ref apiGateway
+      AuthorizerType: REQUEST 
+      AuthorizerPayloadFormatVersion: 2.0
+      AuthorizerResultTtlInSeconds: 10
+      IdentitySource: 
+        - $context.identity.sourceIp     
+      AuthorizerUri: !Join
+        - ''
+        - - 'arn:aws:apigateway:'
+          - !Ref 'AWS::Region'
+          - ':lambda:path/2015-03-31/functions/'
+          - !GetAtt lambdaAuthorizerFunction.Arn
+          - /invocations
+      EnableSimpleResponses: True
+      Name: !Sub "${AWS::StackName}-authorizer"
+
+  lambdaAuthorizerFunctionIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument: 
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Policies:
+        - PolicyName: BasicLambdaFunctionPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+            - Effect: Allow
+              Action:
+              - logs:CreateLogGroup
+              Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*
+            - Effect: Allow
+              Action:
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+              Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${lambdaAuthorizerFunctionName}:*
+
+  lambdaAuthorizerFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: !Sub "[${AWS::StackName}] - Lambda Authorizer"
+      FunctionName: !Ref lambdaAuthorizerFunctionName
+      Handler: "index.lambda_handler"
+      MemorySize: 128
+      Role: !GetAtt lambdaAuthorizerFunctionIamRole.Arn
+      Environment:
+        Variables:
+          ALLOWED_NETWORKS: !Ref allowNetworks
+      Runtime: !Ref pythonRuntime 
+      Timeout: 5
+      Architectures:
+      - !Ref cpuArchitecture
+      Code:
+        ZipFile: | 
+            # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+            # SPDX-License-Identifier: MIT-0
+            
+            import os
+            import ipaddress
+
+            # AWS services to return for default API
+            allowed_networks = os.getenv('ALLOWED_NETWORKS', '0.0.0.0/0').split(',')
+            if allowed_networks == ['']: 
+              allowed_networks = ['0.0.0.0/0']
+
+            # See https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-lambda-authorizer.html for payload format
+            def lambda_handler(event, context):
+              sourceIp = event['requestContext']['http']['sourceIp']
+              source_address = ipaddress.ip_address(sourceIp)
+              for allowed in allowed_networks:              
+                if source_address in ipaddress.ip_network(allowed, False):
+                  return { 
+                    "isAuthorized": True
+                  }
+              
+              return {
+                "isAuthorized": False
+              }
+      Tags:
+        - Key: StackName
+          Value: !Sub ${AWS::StackName}
+        - Key: StackId
+          Value: !Sub ${AWS::StackId}
+        - Key: GitHub
+          Value: https://github.com/aws-samples/aws-ipranges-api
+        - Key: Description
+          Value: !Sub "Authorizer for ${AWS::StackName}-apiGateway"
+
+  apiTriggerAuthorizerPermission:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt lambdaAuthorizerFunction.Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Join
+        - ''
+        - - 'arn:aws:execute-api:'
+          - !Ref 'AWS::Region'
+          - ':'
+          - !Ref 'AWS::AccountId'
+          - ':'
+          - !Ref apiGateway
+          - '/*'
+
+
 Outputs:
   apiGatewayInvokeURL:
     Value: !GetAtt apiGateway.ApiEndpoint
-
 

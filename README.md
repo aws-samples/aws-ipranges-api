@@ -15,11 +15,12 @@ This project makes IP prefixes available as web feeds for dynamic updates by fir
 
 ## Deployment via CloudFormation
 To deploy via AWS [CloudFormation console](https://console.aws.amazon.com/cloudformation), use [Create Stack](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-console-create-stack.html) to upload `template.yaml` file. The template has default parameters values that you can change
+- `allowNetworks`: Source IP prefixes that are authorized to use API Gateway separate by commas. Default is **0.0.0.0/0**
 - `awsServices`: Name of AWS services to return by root URL separated by commas. Default is **CLOUDFRONT_ORIGIN_FACING,ROUTE53_HEALTHCHECKS**
-- `lambdaFunctionName`: Lambda function name. Default is **IPRanges-2-apiGW**
+- `cpuArchitecture`: Instruction set architecture (x86_64 or ARM64). Default is **ARM64**
+- `lambdaFunctionName`: Lambda function name. Default is **aws-ipranges-api**
+- `lambdaAuthorizerFunctionName`: Lambda authorizer function name. Default is **aws-ipranges-api-authorizer**
 - `pythonRuntime`: Python 3 runtime version. Default is **python3.9**
-- `cpuArchitecture`: Instruction set architecture (x86_64 or ARM64). Default is **x86_64**
-
 Go to Outputs tab to get `apiGatewayInvokeURL` value (in the form https://\<VALUE\>.execute-api.\<REGION\>.amazonaws.com) for use by firewall. Refer to [Output options](#output-options) below for more details.
 
   

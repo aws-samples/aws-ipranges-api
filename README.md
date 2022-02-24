@@ -7,7 +7,7 @@ AWS [publishes](https://docs.aws.amazon.com/general/latest/gr/aws-ip-ranges.html
 
 Typically, the firewall administrator will extract out required IP prefixes from ip-ranges.json for use in their firewall rules. The IP prefixes need to be updated whenever there are changes and customer can subscribe to [AWS IP address ranges notifications](https://docs.aws.amazon.com/general/latest/gr/aws-ip-ranges.html#subscribe-notifications)
 
-This project makes IP prefixes available as web feeds for dynamic updates by firewalls. Users have the option to filter the IP prefixes by service, region and network border group and in combined IPv4 and IPv6, IPv4 only or IPv6 only format. Entire solution is serverless, and can be deployed via a single CloudFormation file. 
+This project makes IP prefixes available as web feeds for dynamic updates by firewalls. Users have the option to filter the IP prefixes by service, region and network border group, and in combined IPv4 and IPv6, IPv4 only or IPv6 only format. Entire solution is serverless and can be deployed via a single CloudFormation file. 
 
 ## Architecture Diagram
 <img width="1340" alt="image" src="https://user-images.githubusercontent.com/88474310/155283397-b34594ea-213d-4b8f-b391-6081087f1743.png">
@@ -24,14 +24,14 @@ Go to Outputs tab to get `apiGatewayInvokeURL` value (in the form https://\<VALU
 
   
 ## Firewall Setup
-Firewalls that supports external intel/threat feed for IP prefixes updates include (but not limited to)
+Firewalls that support external intel/threat feed for IP prefixes updates include (but not limited to)
 - Palo Alto: [External Dynamic List](https://docs.paloaltonetworks.com/pan-os/10-1/pan-os-admin/policy/use-an-external-dynamic-list-in-policy/external-dynamic-list.html) 
 - Fortigate: [External Block List](https://docs.fortinet.com/document/fortigate/7.0.5/administration-guide/891236/external-blocklist-policy)
 - pfSense: [URL Table Aliases](https://docs.netgate.com/pfsense/en/latest/firewall/aliases.html#url-table-aliases)
 - OPNsense: [URL Tables (IPs) Aliases](https://docs.opnsense.org/manual/aliases.html)
 
 Refer to vendor website documentation for configuration steps.
-For Check Point users, AWS IP prefixes are available through [Updatable Objects](https://supportcenter.checkpoint.com/supportcenter/portal?eventSubmit_doGoviewsolutiondetails=&solutionid=sk131852)
+Check Point users have access to AWS IP prefixes from [Updatable Objects](https://supportcenter.checkpoint.com/supportcenter/portal?eventSubmit_doGoviewsolutiondetails=&solutionid=sk131852)
 
 ## Output options
 Use different URLs to return IP prefixes. Example

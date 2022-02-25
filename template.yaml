@@ -173,7 +173,7 @@ Resources:
         Variables:
           SERVICES: !Ref awsServices
       Runtime: !Ref pythonRuntime 
-      Timeout: 5
+      Timeout: 10
       Architectures:
       - !Ref cpuArchitecture
       Code:
@@ -200,6 +200,22 @@ Resources:
               ipranges_json = json.loads(data)
               
               url = event['requestContext']['http']['path']
+              if url.lower() == '/favicon.ico':
+                return {
+                  'statusCode': 404,
+                  'body': 'Not Found!',
+                  "headers": {
+                      "content-type": "text/html"                 
+                    }        
+                  }   
+              elif url.lower() == '/robots.txt':
+                return {
+                  'statusCode': 200,
+                  'body' : 'User-agent: *\nDisallow: /',
+                  "headers": {
+                     "content-type": "text/html" 
+                  }
+                }
 
               # available aws services/regions/network_border_groups
               all_aws_services = list()
@@ -305,6 +321,10 @@ Resources:
                   prefixes += '\n'              
                 prefixes += '\n'.join(sorted(ipv6_prefixes, key = ipaddress.IPv6Network))
 
+              sourceIp = event['requestContext']['http']['sourceIp']
+              createDate = ipranges_json['createDate'] 
+              syncToken = ipranges_json['syncToken']
+              print(f'Source IP:{sourceIp}, Path:{url}, IPv4 Prefixes:{len(ipv4_prefixes)}, IPv6 Prefixes:{len(ipv6_prefixes)}, createDate:{createDate}, syncToken:{syncToken}')
               return {
                 'statusCode': 200,
                 'body': prefixes,
@@ -314,8 +334,8 @@ Resources:
                   "aws-region" : ','.join(sorted(aws_region)),
                   "aws-network" : ','.join(sorted(aws_network)),
                   "path" : url,
-                  "syncToken": ipranges_json['syncToken'],
-                  "createDate": ipranges_json['createDate']                  
+                  "syncToken": syncToken,
+                  "createDate": createDate               
                   }        
                 }
       Tags:
@@ -405,13 +425,17 @@ Resources:
             # See https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-lambda-authorizer.html for payload format
             def lambda_handler(event, context):
               sourceIp = event['requestContext']['http']['sourceIp']
+
+              print(f'Source IP:{sourceIp}, Allowed Networks:{allowed_networks}')
               source_address = ipaddress.ip_address(sourceIp)
               for allowed in allowed_networks:              
                 if source_address in ipaddress.ip_network(allowed, False):
+                  print('Authorized: Yes')
                   return { 
                     "isAuthorized": True
                   }
               
+              print('Authorized: No')
               return {
                 "isAuthorized": False
               }
@@ -444,5 +468,9 @@ Resources:
 
 Outputs:
   apiGatewayInvokeURL:
+    Description: URL of API Gateway for use by firewall or application
     Value: !GetAtt apiGateway.ApiEndpoint
-
+  lambdaFunctionCloudWatchLog:
+    Value: !Sub "https://console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#logsV2:log-groups/log-group/$252Faws$252Flambda$252F${lambdaFunctionName}"
+  lambdaAuthorizerFunctionCloudWatchLog:
+    Value: !Sub "https://console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#logsV2:log-groups/log-group/$252Faws$252Flambda$252F${lambdaAuthorizerFunctionName}"

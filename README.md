@@ -14,7 +14,7 @@ This project makes IP prefixes available as web feeds for dynamic updates by fir
 
 
 ## Deployment via CloudFormation console
-Download [`template.yaml`](https://raw.githubusercontent.com/aws-samples/aws-ipranges-api/main/template.yaml) file and login to AWS [CloudFormation console](https://console.aws.amazon.com/cloudformation). Choose **[Create Stack](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-using-console-create-stack-template.html)**, **Upload a template file**, **Choose File**, select `template.yaml` and choose **Next**.
+Download [`template.yaml`](https://raw.githubusercontent.com/aws-samples/aws-ipranges-api/main/template.yaml) file and login to AWS [CloudFormation console](https://console.aws.amazon.com/cloudformation/home#/stacks/create/template). Choose **Create Stack**, **Upload a template file**, **Choose File**, select `template.yaml` and choose **Next**.
 
 Specify a **Stack name** and adjust parameters values as desired. Parameters options include
 - `allowNetworks`: Source IP prefixes that are authorized to use API Gateway separated by commas. Default is **0.0.0.0/0**

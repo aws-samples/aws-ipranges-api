@@ -213,7 +213,7 @@ Resources:
                   'statusCode': 200,
                   'body' : 'User-agent: *\nDisallow: /',
                   "headers": {
-                     "content-type": "text/html" 
+                     "content-type": "text/plain" 
                   }
                 }
 

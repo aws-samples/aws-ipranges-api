@@ -14,7 +14,7 @@ This project makes IP prefixes available as web feeds for dynamic updates by fir
 
 
 ## Deployment via CloudFormation console
-Download `template.yaml` file and login to AWS [CloudFormation console](https://console.aws.amazon.com/cloudformation). Choose **[Create Stack](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-using-console-create-stack-template.html)**, **Upload a template file**, **Choose File**, select `template.yaml` and choose **Next**.
+Download [`template.yaml`](https://raw.githubusercontent.com/aws-samples/aws-ipranges-api/main/template.yaml) file and login to AWS [CloudFormation console](https://console.aws.amazon.com/cloudformation). Choose **[Create Stack](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-using-console-create-stack-template.html)**, **Upload a template file**, **Choose File**, select `template.yaml` and choose **Next**.
 
 Specify a **Stack name** and adjust parameters values as desired. Parameters options include
 - `allowNetworks`: Source IP prefixes that are authorized to use API Gateway separated by commas. Default is **0.0.0.0/0**
@@ -31,8 +31,8 @@ After your stack has been successfully created, its status changes to **CREATE_C
   
 ## Firewall Setup
 Firewalls that support external intel/threat feed for IP prefixes updates include (but not limited to)
-- FortiGate: [External Block List](https://docs.fortinet.com/document/fortigate/7.0.5/administration-guide/891236/external-blocklist-policy)
-- Palo Alto: [External Dynamic List](https://docs.paloaltonetworks.com/pan-os/10-1/pan-os-admin/policy/use-an-external-dynamic-list-in-policy/external-dynamic-list.html) 
+- Fortinet: [External Block List](https://docs.fortinet.com/document/fortigate/7.0.5/administration-guide/891236/external-blocklist-policy)
+- Palo Alto Networks: [External Dynamic List](https://docs.paloaltonetworks.com/pan-os/10-1/pan-os-admin/policy/use-an-external-dynamic-list-in-policy/external-dynamic-list.html) 
 - OPNsense: [URL Tables (IPs) Aliases](https://docs.opnsense.org/manual/aliases.html)
 - pfSense: [URL Table Aliases](https://docs.netgate.com/pfsense/en/latest/firewall/aliases.html#url-table-aliases)
 

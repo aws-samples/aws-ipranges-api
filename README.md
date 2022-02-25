@@ -5,31 +5,36 @@
 ## Description
 AWS [publishes](https://docs.aws.amazon.com/general/latest/gr/aws-ip-ranges.html) its IP ranges in json format through [ip-ranges.json](https://ip-ranges.amazonaws.com/ip-ranges.json). The IP prefixes are commonly used by firewalls for network access control. A common use case is [CloudFront](https://aws.amazon.com/cloudfront/) with origin as customer's on-premise web server where customers [protect origin](https://docs.aws.amazon.com/whitepapers/latest/secure-content-delivery-amazon-cloudfront/protecting-your-origin-by-allowing-access-to-cloudfront-only.html) by only allowing CloudFront (and if in use Route 53 Health Checks) IP address ranges inbound access to on-premise web server using firewall policies.
 
-Typically, the firewall administrator will extract out required IP prefixes from ip-ranges.json for use in their firewall rules. The IP prefixes need to be updated whenever there are changes and customer can subscribe to [AWS IP address ranges notifications](https://docs.aws.amazon.com/general/latest/gr/aws-ip-ranges.html#subscribe-notifications)
+Typically, the firewall administrator will extract out required IP prefixes from ip-ranges.json for use in their firewall rules. The IP prefixes need to be updated whenever there are changes and users can subscribe to [AWS IP address ranges notifications](https://docs.aws.amazon.com/general/latest/gr/aws-ip-ranges.html#subscribe-notifications)
 
-This project makes IP prefixes available as web feeds for dynamic updates by firewalls. Users have the option to filter the IP prefixes by service, region and network border group, and in combined IPv4 and IPv6, IPv4 only or IPv6 only format. Entire solution is serverless and can be deployed via a single CloudFormation file. 
+This project makes IP prefixes available as web feeds for dynamic updates by firewalls. Users have the option to filter IP prefixes by service, region and network border group, and in combined IPv4 and IPv6, IPv4 only or IPv6 only format. Entire solution is serverless and can be deployed via a single CloudFormation file. 
 
 ## Architecture Diagram
 <img width="1340" alt="image" src="https://user-images.githubusercontent.com/88474310/155283397-b34594ea-213d-4b8f-b391-6081087f1743.png">
 
 
-## Deployment via CloudFormation
-To deploy via AWS [CloudFormation console](https://console.aws.amazon.com/cloudformation), use [Create Stack](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-console-create-stack.html) to upload `template.yaml` file. The template has default parameters values that you can change
-- `allowNetworks`: Source IP prefixes that are authorized to use API Gateway separate by commas. Default is **0.0.0.0/0**
+## Deployment via CloudFormation console
+Download `template.yaml` file and login to AWS [CloudFormation console](https://console.aws.amazon.com/cloudformation). Choose **[Create Stack](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-using-console-create-stack-template.html)**, **Upload a template file**, **Choose File**, select `template.yaml` and choose **Next**.
+
+Specify a **Stack name** and adjust parameters values as desired. Parameters options include
+- `allowNetworks`: Source IP prefixes that are authorized to use API Gateway separated by commas. Default is **0.0.0.0/0**
 - `awsServices`: Name of AWS services to return by root URL separated by commas. Default is **CLOUDFRONT_ORIGIN_FACING,ROUTE53_HEALTHCHECKS**
 - `cpuArchitecture`: Instruction set architecture (x86_64 or ARM64). Default is **ARM64**
 - `lambdaFunctionName`: Lambda function name. Default is **aws-ipranges-api**
 - `lambdaAuthorizerFunctionName`: Lambda authorizer function name. Default is **aws-ipranges-api-authorizer**
 - `pythonRuntime`: Python 3 runtime version. Default is **python3.9**
-Go to Outputs tab to get `apiGatewayInvokeURL` value (in the form https://\<VALUE\>.execute-api.\<REGION\>.amazonaws.com) for use by firewall. Refer to [Output options](#output-options) below for more details.
+
+Continue **Next** with [Configure stack options](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-console-add-tags.html), [Review](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-using-console-create-stack-review.html) settings, and click **Create Stack** to launch your stack. 
+
+After your stack has been successfully created, its status changes to **CREATE_COMPLETE**. Go to **Outputs** tab to get `apiGatewayInvokeURL` value (in the form https://\<VALUE\>.execute-api.\<REGION\>.amazonaws.com) for use by firewall. Refer to [Output options](#output-options) below for more details.
 
   
 ## Firewall Setup
 Firewalls that support external intel/threat feed for IP prefixes updates include (but not limited to)
-- Palo Alto: [External Dynamic List](https://docs.paloaltonetworks.com/pan-os/10-1/pan-os-admin/policy/use-an-external-dynamic-list-in-policy/external-dynamic-list.html) 
 - Fortigate: [External Block List](https://docs.fortinet.com/document/fortigate/7.0.5/administration-guide/891236/external-blocklist-policy)
-- pfSense: [URL Table Aliases](https://docs.netgate.com/pfsense/en/latest/firewall/aliases.html#url-table-aliases)
+- Palo Alto: [External Dynamic List](https://docs.paloaltonetworks.com/pan-os/10-1/pan-os-admin/policy/use-an-external-dynamic-list-in-policy/external-dynamic-list.html) 
 - OPNsense: [URL Tables (IPs) Aliases](https://docs.opnsense.org/manual/aliases.html)
+- pfSense: [URL Table Aliases](https://docs.netgate.com/pfsense/en/latest/firewall/aliases.html#url-table-aliases)
 
 Refer to vendor website documentation for configuration steps.
 Check Point users have access to AWS IP prefixes from [Updatable Objects](https://supportcenter.checkpoint.com/supportcenter/portal?eventSubmit_doGoviewsolutiondetails=&solutionid=sk131852)
@@ -52,6 +57,7 @@ Refer to [Amazon API Gateway documentation](https://docs.aws.amazon.com/apigatew
 - [Setting up custom domain names](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-custom-domain-names.html)
 - [Configuring mutual TLS authentication](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-mutual-tls.html)
 - [Throttling requests to your HTTP API](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-throttling.html)
+- [Working with AWS Lambda authorizers for HTTP APIs](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-lambda-authorizer.html): Lambda authorizer is used to limit access by source IP prefixes
 
 ## Security
 

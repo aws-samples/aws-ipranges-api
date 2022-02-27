@@ -45,7 +45,7 @@ Use different URLs to return IP prefixes. Example
   - `/SERVICE` : listing of available services
   - `/REGION` : listing of available regions
   - `/NETWORK` : listing of network border groups which is a unique set of Availability Zones or Local Zones from where AWS advertises IP addresses
-  - `/SERVICE/<SERVICE>` : prefixes for specific SERVICE, e.g. /SERVICE/S3
+  - `/SERVICE/<SERVICE>` : prefixes for specific SERVICE, e.g. /SERVICE/CLOUDFRONT_ORIGIN_FACING
   - `/SERVICE/<SERVICE>/<REGION>` : prefixes for specific SERVICE and REGION, e.g. /SERVICE/EC2/us-east-1
   - `/REGION/<REGION>` : prefixes for specific REGION, e.g. /REGION/ap-southeast-1
   - `/NETWORK/<NETWORK>` : prefixes for specific network border group, e.g. /NETWORK/us-east-1-nyc-1

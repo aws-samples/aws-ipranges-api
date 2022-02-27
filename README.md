@@ -37,7 +37,7 @@ Firewalls that support external intel/threat feed for IP prefixes updates includ
 - pfSense: [URL Table Aliases](https://docs.netgate.com/pfsense/en/latest/firewall/aliases.html#url-table-aliases)
 
 Refer to vendor website documentation for configuration steps.
-Check Point users have access to AWS IP prefixes from [Updatable Objects](https://supportcenter.checkpoint.com/supportcenter/portal?eventSubmit_doGoviewsolutiondetails=&solutionid=sk131852)
+[AWS Network Firewall](https://aws.amazon.com/network-firewall/) users can check [Automated Network Firewall Rules for CloudFront IP Ranges](https://github.com/aws-samples/automated-network-firewall-rules-for-cloudfront-ip-ranges) project while Check Point users have access to AWS IP prefixes from [Updatable Objects](https://supportcenter.checkpoint.com/supportcenter/portal?eventSubmit_doGoviewsolutiondetails=&solutionid=sk131852) 
 
 ## Output options
 Use different URLs to return IP prefixes. Example

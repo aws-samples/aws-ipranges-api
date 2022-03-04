@@ -20,11 +20,10 @@ Metadata:
       OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
       SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-
 Parameters:
   allowNetworks:
     Type: String
-    Description: Source Internet IP subnets that are authorized to use API Gateway, separated by commas (e.g. 1.2.3.4/32,100.0.0.0/24)
+    Description: Source internet IP subnets that are authorized to use API Gateway separated by commas (e.g. 1.2.3.4/32,100.0.0.0/24)
     Default: 0.0.0.0/0
   lambdaFunctionName:
     Type: String
@@ -51,7 +50,7 @@ Parameters:
   awsServices:
     Type: String
     Default: CLOUDFRONT_ORIGIN_FACING,ROUTE53_HEALTHCHECKS
-    Description: Name of AWS services to retrieve, separated by commas (see https://docs.aws.amazon.com/general/latest/gr/aws-ip-ranges.html)
+    Description: Name of AWS services to retrieve separated by commas (see https://docs.aws.amazon.com/general/latest/gr/aws-ip-ranges.html)
 
 Resources:
   apiGateway:
@@ -103,7 +102,7 @@ Resources:
     Type: 'AWS::ApiGatewayV2::Integration'
     Properties:
       ApiId: !Ref apiGateway
-      Description: Integration with lambda function !Ref lambdaFunctionName
+      Description: !Sub '[${AWS::StackName}]: Lambda integration with [${apiGateway}]'
       IntegrationType: AWS_PROXY
       IntegrationUri: !Join
         - ''
@@ -114,7 +113,7 @@ Resources:
           - /invocations
       IntegrationMethod: POST
       PayloadFormatVersion: '2.0'
-      TimeoutInMillis: 5000
+      TimeoutInMillis: 20000
   
   # Account limits at https://docs.aws.amazon.com/apigateway/latest/developerguide/limits.html#apigateway-account-level-limits-table
   apiStage:
@@ -147,7 +146,7 @@ Resources:
           Action:
           - sts:AssumeRole
       Policies:
-        - PolicyName: BasicLambdaFunctionPolicy
+        - PolicyName: lambdaFunctionPolicy
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
@@ -173,7 +172,7 @@ Resources:
         Variables:
           SERVICES: !Ref awsServices
       Runtime: !Ref pythonRuntime 
-      Timeout: 10
+      Timeout: 20
       Architectures:
       - !Ref cpuArchitecture
       Code:
@@ -348,6 +347,12 @@ Resources:
         - Key: Description
           Value: Returns AWS IP prefixes from ip-ranges.json
 
+  lambdaVersion:
+    Type: AWS::Lambda::Version
+    Properties:
+      FunctionName: !Ref lambdaFunction
+      Description: v1.0
+
   apiAuthorizer:
     Type: AWS::ApiGatewayV2::Authorizer
     Properties: 
@@ -380,7 +385,7 @@ Resources:
           Action:
           - sts:AssumeRole
       Policies:
-        - PolicyName: BasicLambdaFunctionPolicy
+        - PolicyName: lambdaAuthorizerFunctionPolicy
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
@@ -449,6 +454,12 @@ Resources:
         - Key: Description
           Value: !Sub "Authorizer for ${AWS::StackName}-apiGateway"
 
+  lambdaAuthorizerVersion:
+    Type: AWS::Lambda::Version
+    Properties:
+      FunctionName: !Ref lambdaAuthorizerFunction
+      Description: v1.0
+
   apiTriggerAuthorizerPermission:
     Type: "AWS::Lambda::Permission"
     Properties:
@@ -471,6 +482,8 @@ Outputs:
     Description: URL of API Gateway for use by firewall or application
     Value: !GetAtt apiGateway.ApiEndpoint
   lambdaFunctionCloudWatchLog:
+    Description: Cloudwatch log for Lambda function
     Value: !Sub "https://console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#logsV2:log-groups/log-group/$252Faws$252Flambda$252F${lambdaFunctionName}"
   lambdaAuthorizerFunctionCloudWatchLog:
+    Description: Cloudwatch log for Lambda authorizer function
     Value: !Sub "https://console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#logsV2:log-groups/log-group/$252Faws$252Flambda$252F${lambdaAuthorizerFunctionName}"

@@ -60,12 +60,13 @@ Resources:
       - lambdaAuthorizerFunction
     Properties:
       Name: !Sub "${AWS::StackName}-apiGateway"
-      Description: !Sub "[${AWS::StackName}] - returns AWS IP prefixes from ip-ranges.json via lambda function [${lambdaFunctionName}]"
+      Description: !Sub "[${AWS::StackName}] - returns AWS IP prefixes from ip-ranges.json"
       ProtocolType: HTTP
       Tags: 
         StackName: !Sub ${AWS::StackName}
         StackId: !Sub ${AWS::StackId}        
         LambdaFunction: !Ref lambdaFunctionName
+        LambdaAuthorizerFunction: !Ref lambdaAuthorizerFunctionName
         GitHub: 'https://github.com/aws-samples/aws-ipranges-api'
         
   apiRoute:
@@ -113,7 +114,7 @@ Resources:
           - /invocations
       IntegrationMethod: POST
       PayloadFormatVersion: '2.0'
-      TimeoutInMillis: 20000
+      TimeoutInMillis: 25000
   
   # Account limits at https://docs.aws.amazon.com/apigateway/latest/developerguide/limits.html#apigateway-account-level-limits-table
   apiStage:
@@ -159,11 +160,20 @@ Resources:
               - logs:CreateLogStream
               - logs:PutLogEvents
               Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${lambdaFunctionName}:*
+      Tags:
+        - Key: StackName
+          Value: !Sub ${AWS::StackName}
+        - Key: StackId
+          Value: !Sub ${AWS::StackId}
+        - Key: GitHub
+          Value: https://github.com/aws-samples/aws-ipranges-api
+        - Key: Description
+          Value: !Sub 'For lambda function ${lambdaFunctionName}'
 
   lambdaFunction:
     Type: AWS::Lambda::Function
     Properties:
-      Description: !Sub "[${AWS::StackName}] - Returns AWS IP prefixes via API Gateway"
+      Description: !Sub "[${AWS::StackName}] - Returns AWS IP prefixes for API Gateway"
       FunctionName: !Ref lambdaFunctionName
       Handler: "index.lambda_handler"
       MemorySize: 128
@@ -172,7 +182,7 @@ Resources:
         Variables:
           SERVICES: !Ref awsServices
       Runtime: !Ref pythonRuntime 
-      Timeout: 20
+      Timeout: 25
       Architectures:
       - !Ref cpuArchitecture
       Code:
@@ -398,11 +408,20 @@ Resources:
               - logs:CreateLogStream
               - logs:PutLogEvents
               Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${lambdaAuthorizerFunctionName}:*
+      Tags:
+        - Key: StackName
+          Value: !Sub ${AWS::StackName}
+        - Key: StackId
+          Value: !Sub ${AWS::StackId}
+        - Key: GitHub
+          Value: https://github.com/aws-samples/aws-ipranges-api
+        - Key: Description
+          Value: !Sub 'For lambda function ${lambdaAuthorizerFunctionName}'
 
   lambdaAuthorizerFunction:
     Type: AWS::Lambda::Function
     Properties:
-      Description: !Sub "[${AWS::StackName}] - Lambda Authorizer"
+      Description: !Sub "[${AWS::StackName}] - Lambda Authorizer for API Gateway"
       FunctionName: !Ref lambdaAuthorizerFunctionName
       Handler: "index.lambda_handler"
       MemorySize: 128

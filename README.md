@@ -7,7 +7,7 @@ AWS [publishes](https://docs.aws.amazon.com/general/latest/gr/aws-ip-ranges.html
 
 A common use case is [Amazon CloudFront](https://aws.amazon.com/cloudfront/) with origin as customer's on-premise web server where customers [protect origin](https://docs.aws.amazon.com/whitepapers/latest/secure-content-delivery-amazon-cloudfront/protecting-your-origin-by-allowing-access-to-cloudfront-only.html) by only allowing CloudFront (and if in use [Route 53 Health Checks](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/dns-failover.html)) IP address ranges inbound access to on-premise web server using firewall policies.
 
-Another use case is for [egress control](https://docs.aws.amazon.com/general/latest/gr/aws-ip-ranges.html#aws-ip-egress-control) where firewall administrators wish to allow-list and/or deny-list to specific AWS services and/or region, e.g. [Route 53 IP prefixes](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/route-53-ip-addresses.html)
+Another use case is for [egress control](https://docs.aws.amazon.com/general/latest/gr/aws-ip-ranges.html#aws-ip-egress-control) where firewall administrators wish to allow-list and/or deny-list specific AWS services or IP prefixes in a specfic region, e.g. [Route 53 IP prefixes](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/route-53-ip-addresses.html)
 
 Typically, the firewall administrator will extract out required IP prefixes from ip-ranges.json for use in their firewall rules. The IP prefixes need to be updated whenever there are changes and users can subscribe to [AWS IP address ranges notifications](https://docs.aws.amazon.com/general/latest/gr/aws-ip-ranges.html#subscribe-notifications)
 

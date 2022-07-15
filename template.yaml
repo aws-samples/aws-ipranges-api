@@ -176,7 +176,7 @@ Resources:
       Description: !Sub "[${AWS::StackName}] - Returns AWS IP prefixes for API Gateway"
       FunctionName: !Ref lambdaFunctionName
       Handler: "index.lambda_handler"
-      MemorySize: 128
+      MemorySize: 1024
       Role: !GetAtt lambdaFunctionIamRole.Arn
       Environment:
         Variables:

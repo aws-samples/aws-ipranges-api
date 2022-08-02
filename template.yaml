@@ -23,34 +23,37 @@ Metadata:
 Parameters:
   allowNetworks:
     Type: String
-    Description: Source internet IP subnets that are authorized to use API Gateway separated by commas (e.g. 1.2.3.4/32,100.0.0.0/24)
+    Description: Source IP prefixes allowed to use API separated by commas (e.g. 1.2.3.4/32,100.0.0.0/24)
     Default: 0.0.0.0/0
   lambdaFunctionName:
     Type: String
     AllowedPattern: "[a-zA-Z0-9]+[a-zA-Z0-9-]+[a-zA-Z0-9]+"
-    Description: Name of Lambda function used by API Gateway
+    Description: API Gateway lambda function name
+    ConstraintDescription: Enter a valid function name
     Default: aws-ipranges-api
   lambdaAuthorizerFunctionName:
     Type: String
     AllowedPattern: "[a-zA-Z0-9]+[a-zA-Z0-9-]+[a-zA-Z0-9]+"
-    Description: Name of Lambda function used by API Gateway Authorizer
+    Description: API Gateway Authorizer lambda function name
+    ConstraintDescription: Enter a valid function name
     Default: aws-ipranges-api-authorizer
   pythonRuntime:
     Type: String
     AllowedPattern: "python3\\.\\d{1,2}"
-    Description: Python 3 runtime version
+    Description: Python 3 runtime version ( https://docs.aws.amazon.com/lambda/latest/dg/lambda-python.html )
+    ConstraintDescription: Enter a valid Python version
     Default: python3.9
   cpuArchitecture:
     Type: String
     AllowedValues:
       - x86_64
       - arm64
-    Description: Instruction set architecture (Intel/AMD or Graviton)
+    Description: Instruction set architecture
     Default: arm64
   awsServices:
     Type: String
     Default: CLOUDFRONT_ORIGIN_FACING,ROUTE53_HEALTHCHECKS
-    Description: Name of AWS services to retrieve separated by commas (see https://docs.aws.amazon.com/general/latest/gr/aws-ip-ranges.html)
+    Description: Default AWS service IP prefixes to return separated by commas (see https://docs.aws.amazon.com/general/latest/gr/aws-ip-ranges.html)
 
 Resources:
   apiGateway:
@@ -59,14 +62,12 @@ Resources:
       - lambdaFunction
       - lambdaAuthorizerFunction
     Properties:
-      Name: !Sub "${AWS::StackName}-apiGateway"
+      Name: !Sub "${AWS::StackName}-api"
       Description: !Sub "[${AWS::StackName}] - returns AWS IP prefixes from ip-ranges.json"
       ProtocolType: HTTP
       Tags: 
         StackName: !Sub ${AWS::StackName}
         StackId: !Sub ${AWS::StackId}        
-        LambdaFunction: !Ref lambdaFunctionName
-        LambdaAuthorizerFunction: !Ref lambdaAuthorizerFunctionName
         GitHub: 'https://github.com/aws-samples/aws-ipranges-api'
         
   apiRoute:
@@ -76,50 +77,45 @@ Resources:
       RouteKey: '$default'
       AuthorizationType: CUSTOM
       AuthorizerId: !Ref apiAuthorizer
-      Target: !Join
-        - /
-        - - integrations
-          - !Ref apiGatewayIntegration
+      Target: !Sub 'integrations/${apiGatewayIntegration}'
   
-  # See https://docs.aws.amazon.com/lambda/latest/dg/services-apigateway.html#apigateway-permissions
   apiTriggerPermission:
     Type: "AWS::Lambda::Permission"
-    Properties:
+    Properties:  # See https://docs.aws.amazon.com/lambda/latest/dg/services-apigateway.html#apigateway-permissions
       Action: lambda:InvokeFunction
       FunctionName: !GetAtt lambdaFunction.Arn
       Principal: apigateway.amazonaws.com
-      SourceArn: !Join
-        - ''
-        - - 'arn:aws:execute-api:'
-          - !Ref 'AWS::Region'
-          - ':'
-          - !Ref 'AWS::AccountId'
-          - ':'
-          - !Ref apiGateway
-          - '/*'
+      SourceArn: !Sub 'arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${apiGateway}/*'
 
-  # Uri at https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-custom-integrations.html
   apiGatewayIntegration:
     Type: 'AWS::ApiGatewayV2::Integration'
-    Properties:
+    Properties: # Uri at https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-custom-integrations.html
       ApiId: !Ref apiGateway
       Description: !Sub '[${AWS::StackName}]: Lambda integration with [${apiGateway}]'
       IntegrationType: AWS_PROXY
-      IntegrationUri: !Join
-        - ''
-        - - 'arn:aws:apigateway:'
-          - !Ref 'AWS::Region'
-          - ':lambda:path/2015-03-31/functions/'
-          - !GetAtt lambdaFunction.Arn
-          - /invocations
+      IntegrationUri: !Sub 'arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaFunction.Arn}/invocations'
       IntegrationMethod: POST
       PayloadFormatVersion: '2.0'
       TimeoutInMillis: 25000
   
-  # Account limits at https://docs.aws.amazon.com/apigateway/latest/developerguide/limits.html#apigateway-account-level-limits-table
+  apiLogGroup:
+    Type: 'AWS::Logs::LogGroup'
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      KmsKeyId: !Ref AWS::NoValue
+      RetentionInDays: !Ref AWS::NoValue
+      Tags:
+        - Key: StackName
+          Value: !Sub ${AWS::StackName}
+        - Key: StackId
+          Value: !Sub ${AWS::StackId}
+        - Key: GitHub
+          Value: 'https://github.com/aws-samples/aws-ipranges-api'
+
   apiStage:
     Type: 'AWS::ApiGatewayV2::Stage'
-    Properties:
+    Properties: # Account limits at https://docs.aws.amazon.com/apigateway/latest/developerguide/limits.html#apigateway-account-level-limits-table
       StageName: $default
       Description: Prod Stage
       AutoDeploy: true
@@ -128,12 +124,14 @@ Resources:
         DetailedMetricsEnabled: true
         #ThrottlingBurstLimit: 50
         #ThrottlingRateLimit: 10
+      AccessLogSettings: # https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-mapping-template-reference.html
+        DestinationArn: !GetAtt apiLogGroup.Arn
+        Format: '$context.identity.sourceIp,$context.path,$context.requestTime,$context.httpMethod,$context.routeKey,$context.protocol,$context.status,$context.responseLength,$context.requestId'
       Tags: 
         StackName: !Sub ${AWS::StackName}
         StackId: !Sub ${AWS::StackId}
-        LambdaFunction: !Ref lambdaFunctionName
         GitHub: 'https://github.com/aws-samples/aws-ipranges-api'
-
+ 
   lambdaFunctionIamRole:
     Type: AWS::IAM::Role
     Properties:
@@ -146,7 +144,7 @@ Resources:
             - lambda.amazonaws.com
           Action:
           - sts:AssumeRole
-      Policies:
+      Policies:  # Access logs at https://docs.aws.amazon.com/lambda/latest/operatorguide/access-logs.html
         - PolicyName: lambdaFunctionPolicy
           PolicyDocument:
             Version: "2012-10-17"
@@ -154,12 +152,12 @@ Resources:
             - Effect: Allow
               Action:
               - logs:CreateLogGroup
-              Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*
+              Resource: !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:*
             - Effect: Allow
               Action:
               - logs:CreateLogStream
               - logs:PutLogEvents
-              Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${lambdaFunctionName}:*
+              Resource: !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${lambdaFunctionName}:*
       Tags:
         - Key: StackName
           Value: !Sub ${AWS::StackName}
@@ -177,6 +175,7 @@ Resources:
       FunctionName: !Ref lambdaFunctionName
       Handler: "index.lambda_handler"
       MemorySize: 1024
+      ReservedConcurrentExecutions: !Ref AWS::NoValue
       Role: !GetAtt lambdaFunctionIamRole.Arn
       Environment:
         Variables:
@@ -361,7 +360,7 @@ Resources:
     Type: AWS::Lambda::Version
     Properties:
       FunctionName: !Ref lambdaFunction
-      Description: v1.0
+      Description: version 1.0
 
   apiAuthorizer:
     Type: AWS::ApiGatewayV2::Authorizer
@@ -371,14 +370,8 @@ Resources:
       AuthorizerPayloadFormatVersion: 2.0
       AuthorizerResultTtlInSeconds: 10
       IdentitySource: 
-        - $context.identity.sourceIp     
-      AuthorizerUri: !Join
-        - ''
-        - - 'arn:aws:apigateway:'
-          - !Ref 'AWS::Region'
-          - ':lambda:path/2015-03-31/functions/'
-          - !GetAtt lambdaAuthorizerFunction.Arn
-          - /invocations
+        - $context.identity.sourceIp
+      AuthorizerUri: !Sub 'arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaAuthorizerFunction.Arn}/invocations'     
       EnableSimpleResponses: True
       Name: !Sub "${AWS::StackName}-authorizer"
 
@@ -402,12 +395,12 @@ Resources:
             - Effect: Allow
               Action:
               - logs:CreateLogGroup
-              Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*
+              Resource: !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:*
             - Effect: Allow
               Action:
               - logs:CreateLogStream
               - logs:PutLogEvents
-              Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${lambdaAuthorizerFunctionName}:*
+              Resource: !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${lambdaAuthorizerFunctionName}:*
       Tags:
         - Key: StackName
           Value: !Sub ${AWS::StackName}
@@ -425,6 +418,7 @@ Resources:
       FunctionName: !Ref lambdaAuthorizerFunctionName
       Handler: "index.lambda_handler"
       MemorySize: 128
+      ReservedConcurrentExecutions: !Ref AWS::NoValue
       Role: !GetAtt lambdaAuthorizerFunctionIamRole.Arn
       Environment:
         Variables:
@@ -477,7 +471,7 @@ Resources:
     Type: AWS::Lambda::Version
     Properties:
       FunctionName: !Ref lambdaAuthorizerFunction
-      Description: v1.0
+      Description: version 1.0
 
   apiTriggerAuthorizerPermission:
     Type: "AWS::Lambda::Permission"
@@ -485,24 +479,18 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: !GetAtt lambdaAuthorizerFunction.Arn
       Principal: apigateway.amazonaws.com
-      SourceArn: !Join
-        - ''
-        - - 'arn:aws:execute-api:'
-          - !Ref 'AWS::Region'
-          - ':'
-          - !Ref 'AWS::AccountId'
-          - ':'
-          - !Ref apiGateway
-          - '/*'
-
+      SourceArn: !Sub 'arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${apiGateway}/*'
 
 Outputs:
   apiGatewayInvokeURL:
     Description: URL of API Gateway for use by firewall or application
     Value: !GetAtt apiGateway.ApiEndpoint
-  lambdaFunctionCloudWatchLog:
+  apiGatewayLog:
+    Description: Cloudwatch log for API Gateway
+    Value: !Sub "https://console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#logsV2:log-groups/log-group/${apiLogGroup}"
+  lambdaFunctionLog:
     Description: Cloudwatch log for Lambda function
     Value: !Sub "https://console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#logsV2:log-groups/log-group/$252Faws$252Flambda$252F${lambdaFunctionName}"
-  lambdaAuthorizerFunctionCloudWatchLog:
+  lambdaAuthorizerFunctionLog:
     Description: Cloudwatch log for Lambda authorizer function
     Value: !Sub "https://console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#logsV2:log-groups/log-group/$252Faws$252Flambda$252F${lambdaAuthorizerFunctionName}"

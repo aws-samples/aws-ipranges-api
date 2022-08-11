@@ -45,7 +45,7 @@ Refer to vendor website documentation for configuration steps.
 
 ## Output options
 Use different URLs to return IP prefixes. Example
-  - `/` : return CloudFront origin facing and R53 Health Checks  prefixes, customizable via `SERVICES` Lambda environment variable
+  - `/` : return CloudFront origin facing prefixes, customizable via `SERVICES` Lambda environment variable
   - `/SERVICE` : listing of available services
   - `/REGION` : listing of available regions
   - `/NETWORK` : listing of network border groups which is a unique set of Availability Zones or Local Zones from where AWS advertises IP addresses

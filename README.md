@@ -22,7 +22,7 @@ Download [`template.yaml`](https://raw.githubusercontent.com/aws-samples/aws-ipr
 
 Specify a **Stack name** and adjust parameters values as desired. Parameters options include
 - `allowNetworks`: Source IP prefixes that are authorized to use API Gateway separated by commas. Default is **0.0.0.0/0**
-- `awsServices`: Name of AWS services to return by root URL separated by commas. Default is **CLOUDFRONT_ORIGIN_FACING,ROUTE53_HEALTHCHECKS**
+- `awsServices`: Name of AWS services to return by root URL separated by commas. Default is **CLOUDFRONT_ORIGIN_FACING**
 - `cpuArchitecture`: Instruction set architecture (x86_64 or ARM64). Default is **ARM64**
 - `lambdaFunctionName`: Lambda function name. Default is **aws-ipranges-api**
 - `lambdaAuthorizerFunctionName`: Lambda authorizer function name. Default is **aws-ipranges-api-authorizer**

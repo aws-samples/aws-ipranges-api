@@ -52,7 +52,7 @@ Parameters:
     Default: arm64
   awsServices:
     Type: String
-    Default: CLOUDFRONT_ORIGIN_FACING,ROUTE53_HEALTHCHECKS
+    Default: CLOUDFRONT_ORIGIN_FACING
     Description: Default AWS service IP prefixes to return separated by commas (see https://docs.aws.amazon.com/general/latest/gr/aws-ip-ranges.html)
 
 Resources:

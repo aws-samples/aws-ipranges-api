@@ -1,15 +1,15 @@
 ## AWS-IPRanges-API
 
-[Serverless](https://aws.amazon.com/serverless/) web site based on [Amazon API Gateway](https://aws.amazon.com/api-gateway/) and [AWS Lambda](https://aws.amazon.com/lambda/) that outputs IP Prefixes from AWS ip-ranges.json for use by firewalls and other applications
+[Serverless](https://aws.amazon.com/serverless/) web site based on [Amazon API Gateway](https://aws.amazon.com/api-gateway/) and [AWS Lambda](https://aws.amazon.com/lambda/) that outputs IP prefixes from AWS ip-ranges.json for use by firewalls and other applications
 
 ## Description
-AWS [publishes](https://docs.aws.amazon.com/general/latest/gr/aws-ip-ranges.html) its IP ranges in json format through [ip-ranges.json](https://ip-ranges.amazonaws.com/ip-ranges.json). The IP prefixes are commonly used by firewalls for inbound and/or outbound network access control. 
+AWS [publishes](https://docs.aws.amazon.com/general/latest/gr/aws-ip-ranges.html) its IP ranges in json format through [ip-ranges.json](https://ip-ranges.amazonaws.com/ip-ranges.json). The IP prefixes are commonly used by network firewalls for inbound and/or outbound network access control. 
 
-A common use case is [Amazon CloudFront](https://aws.amazon.com/cloudfront/) with origin as customer's on-premise web server where customers [protect origin](https://docs.aws.amazon.com/whitepapers/latest/secure-content-delivery-amazon-cloudfront/protecting-your-origin-by-allowing-access-to-cloudfront-only.html) by only allowing [CloudFront origin facing](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/LocationsOfEdgeServers.html) (and if in use [Route 53 Health Checks](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/route-53-ip-addresses.html)) IP address prefixes inbound access to on-premise web server using firewall policies.
+A common use case is [Amazon CloudFront](https://aws.amazon.com/cloudfront/) with on-premise web server as origin; only [CloudFront origin facing](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/LocationsOfEdgeServers.html) (and if in use [Route 53 Health Checks](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/route-53-ip-addresses.html)) IP prefixes are allowed inbound access at perimeter network firewall. 
 
-Another use case is for [egress control](https://docs.aws.amazon.com/general/latest/gr/aws-ip-ranges.html#aws-ip-egress-control) where firewall administrators wish to allow-list or deny-list outbound network acess to all or specific AWS services or specific AWS region, e.g. [Route 53 IP prefixes](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/route-53-ip-addresses.html), [Global Accelerator IP prefixes](https://docs.aws.amazon.com/global-accelerator/latest/dg/introduction-ip-ranges.html)
+Another use case is for [egress control](https://docs.aws.amazon.com/general/latest/gr/aws-ip-ranges.html#aws-ip-egress-control) where firewall administrators allow-list or deny-list outbound network acess to all or specific AWS service/region such as [Route 53 name servers](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/route-53-ip-addresses.html) or [Amazon S3](https://aws.amazon.com/premiumsupport/knowledge-center/s3-find-ip-address-ranges/)
 
-Typically, the firewall administrator will extract out required IP prefixes from ip-ranges.json for use in their firewall rules. The IP prefixes need to be updated whenever there are changes and users can subscribe to [AWS IP address ranges notifications](https://docs.aws.amazon.com/general/latest/gr/aws-ip-ranges.html#subscribe-notifications)
+Typically, the firewall administrator will extract out required IP prefixes from ip-ranges.json for use in firewall rules. The IP prefixes need to be updated whenever there are changes and users can subscribe to [AWS IP address ranges notifications](https://docs.aws.amazon.com/general/latest/gr/aws-ip-ranges.html#subscribe-notifications)
 
 This project makes IP prefixes available as web feeds for automatic updates by firewalls. Users have the option to filter IP prefixes by service, region and network border group, and in combined IPv4 and IPv6, IPv4 only or IPv6 only format. Entire solution is serverless and can be deployed via a single CloudFormation file. 
 
@@ -23,14 +23,14 @@ Download [`template.yaml`](https://raw.githubusercontent.com/aws-samples/aws-ipr
 Specify a **Stack name** and adjust parameters values as desired. Parameters options include
 - `allowNetworks`: Source IP prefixes that are authorized to use API Gateway separated by commas. Default is **0.0.0.0/0**
 - `awsServices`: Name of AWS services to return by root URL separated by commas. Default is **CLOUDFRONT_ORIGIN_FACING**
-- `cpuArchitecture`: Instruction set architecture (x86_64 or ARM64). Default is **ARM64**
+- `cpuArchitecture`: Instruction set architecture (x86_64 or arm64). Default is **arm64**
 - `lambdaFunctionName`: Lambda function name. Default is **aws-ipranges-api**
 - `lambdaAuthorizerFunctionName`: Lambda authorizer function name. Default is **aws-ipranges-api-authorizer**
 - `pythonRuntime`: Python 3 runtime version. Default is **python3.9**
 
 Continue **Next** with [Configure stack options](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-console-add-tags.html), [Review](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-using-console-create-stack-review.html) settings, and click **Create Stack** to launch your stack. 
 
-After your stack has been successfully created, its status changes to **CREATE_COMPLETE**. Go to **Outputs** tab to get `apiGatewayInvokeURL` value (in the format `https://<api-id>.execute-api.<region>.amazonaws.com`) for use by firewall. Refer to [Output options](#output-options) below for more details.
+After stack has been successfully created, its status changes to **CREATE_COMPLETE**. Go to **Outputs** tab to get `apiGatewayInvokeURL` value (in the format `https://<api-id>.execute-api.<region>.amazonaws.com`) for use by firewall. Refer to [Output options](#output-options) below for more details.
 
   
 ## Firewall Setup

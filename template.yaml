@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: Serverless (API Gateway) website that returns AWS IP prefixes from ip-ranges.json (see https://github.com/aws-samples/aws-ipranges-api)
+Description: Serverless (API Gateway) website that returns AWS IP prefixes from ip-ranges.json ( https://github.com/aws-samples/aws-ipranges-api )
 
 Metadata:
   License:
@@ -53,7 +53,7 @@ Parameters:
   awsServices:
     Type: String
     Default: CLOUDFRONT_ORIGIN_FACING
-    Description: Default AWS service IP prefixes to return separated by commas (see https://docs.aws.amazon.com/general/latest/gr/aws-ip-ranges.html)
+    Description: Default AWS service IP prefixes to return separated by commas ( https://docs.aws.amazon.com/general/latest/gr/aws-ip-ranges.html )
 
 Resources:
   apiGateway:
@@ -238,7 +238,6 @@ Resources:
                 if i['network_border_group'] not in all_aws_networks:
                   all_aws_networks.append(i['network_border_group'])
               
-
               args = url.split('/')
               responseBody = ''
               

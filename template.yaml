@@ -20,27 +20,53 @@ Metadata:
       OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
       SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+  AWS::CloudFormation::Interface: 
+    ParameterGroups:
+      -
+        Label:
+          default: API Gateway configuration
+        Parameters:
+          - awsServices
+          - allowNetworks
+      -
+        Label:
+          default: Lambda configuration
+        Parameters:
+          - pythonRuntime
+          - cpuArchitecture
+          - lambdaFunctionName
+          - lambdaAuthorizerFunctionName
+    ParameterLabels: 
+      awsServices: 
+        default: "[Services]: Default AWS Service IP prefixes to return separated by commas"
+      allowNetworks:
+        default: "[Allowed Networks]: IP prefixes allowed to use API Gateway separated by commas (e.g. 1.2.3.4/32,100.0.0.0/24)"
+      pythonRuntime:
+        default: Python 3 runtime version ( https://docs.aws.amazon.com/lambda/latest/dg/lambda-python.html )
+      cpuArchitecture:
+        default: Instruction set architecture
+      lambdaFunctionName:
+        default: API Gateway lambda function name
+      lambdaAuthorizerFunctionName:
+        default: API Gateway Authorizer lambda function name
+
 Parameters:
   allowNetworks:
     Type: String
-    Description: Source IP prefixes allowed to use API separated by commas (e.g. 1.2.3.4/32,100.0.0.0/24)
     Default: 0.0.0.0/0
   lambdaFunctionName:
     Type: String
     AllowedPattern: "[a-zA-Z0-9]+[a-zA-Z0-9-]+[a-zA-Z0-9]+"
-    Description: API Gateway lambda function name
     ConstraintDescription: Enter a valid function name
     Default: aws-ipranges-api
   lambdaAuthorizerFunctionName:
     Type: String
     AllowedPattern: "[a-zA-Z0-9]+[a-zA-Z0-9-]+[a-zA-Z0-9]+"
-    Description: API Gateway Authorizer lambda function name
     ConstraintDescription: Enter a valid function name
     Default: aws-ipranges-api-authorizer
   pythonRuntime:
     Type: String
     AllowedPattern: "python3\\.\\d{1,2}"
-    Description: Python 3 runtime version ( https://docs.aws.amazon.com/lambda/latest/dg/lambda-python.html )
     ConstraintDescription: Enter a valid Python version
     Default: python3.9
   cpuArchitecture:
@@ -48,12 +74,12 @@ Parameters:
     AllowedValues:
       - x86_64
       - arm64
-    Description: Instruction set architecture
     Default: arm64
   awsServices:
     Type: String
     Default: CLOUDFRONT_ORIGIN_FACING
-    Description: Default AWS service IP prefixes to return separated by commas ( https://docs.aws.amazon.com/general/latest/gr/aws-ip-ranges.html )
+    AllowedPattern: ".+"
+    ConstraintDescription: Enter a valid AWS service
 
 Resources:
   apiGateway:
@@ -195,9 +221,9 @@ Resources:
             import ipaddress
 
             # AWS services to return for default API
-            default_services = os.getenv('SERVICES', 'CLOUDFRONT_ORIGIN_FACING,ROUTE53_HEALTHCHECKS').split(',')
+            default_services = os.getenv('SERVICES', 'CLOUDFRONT_ORIGIN_FACING').split(',')
             if default_services == ['']: 
-              default_services = ['CLOUDFRONT_ORIGIN_FACING','ROUTE53_HEALTHCHECKS']
+              default_services = ['CLOUDFRONT_ORIGIN_FACING']
 
             # See https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html for payload format
             def lambda_handler(event, context):  
@@ -206,7 +232,9 @@ Resources:
               response = request.urlopen('https://ip-ranges.amazonaws.com/ip-ranges.json')
               data = response.read()
               ipranges_json = json.loads(data)
-              
+              createDate = ipranges_json['createDate'] 
+              syncToken = ipranges_json['syncToken']              
+
               url = event['requestContext']['http']['path']
               if url.lower() == '/favicon.ico':
                 return {
@@ -224,6 +252,22 @@ Resources:
                      "content-type": "text/plain" 
                   }
                 }
+              elif url.lower() == '/createdate':
+                return {
+                  'statusCode': 200,
+                  'body' : createDate,
+                  "headers": {
+                     "content-type": "text/plain" 
+                  }
+                }              
+              elif url.lower() == '/synctoken':
+                return {
+                  'statusCode': 200,
+                  'body' : syncToken,
+                  "headers": {
+                     "content-type": "text/plain" 
+                  }
+                }              
 
               # available aws services/regions/network_border_groups
               all_aws_services = list()
@@ -329,8 +373,7 @@ Resources:
                 prefixes += '\n'.join(sorted(ipv6_prefixes, key = ipaddress.IPv6Network))
 
               sourceIp = event['requestContext']['http']['sourceIp']
-              createDate = ipranges_json['createDate'] 
-              syncToken = ipranges_json['syncToken']
+
               print(f'Source IP:{sourceIp}, Path:{url}, IPv4 Prefixes:{len(ipv4_prefixes)}, IPv6 Prefixes:{len(ipv6_prefixes)}, createDate:{createDate}, syncToken:{syncToken}')
               return {
                 'statusCode': 200,

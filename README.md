@@ -44,7 +44,7 @@ Refer to vendor website documentation for configuration steps.
 [AWS Network Firewall](https://aws.amazon.com/network-firewall/) users can check [Automated Network Firewall Rules for CloudFront IP Ranges](https://github.com/aws-samples/automated-network-firewall-rules-for-cloudfront-ip-ranges) project while Check Point users have access to AWS IP prefixes from [Updatable Objects](https://supportcenter.checkpoint.com/supportcenter/portal?eventSubmit_doGoviewsolutiondetails=&solutionid=sk131852) 
 
 ## Output options
-Use different URLs to return IP prefixes. Example
+Use different URLs to return IP prefixes and other values. Example
   - `/` : return CloudFront origin facing prefixes, customizable via `SERVICES` Lambda environment variable
   - `/SERVICE` : listing of available services
   - `/REGION` : listing of available regions
@@ -53,8 +53,10 @@ Use different URLs to return IP prefixes. Example
   - `/SERVICE/<SERVICE>/<REGION>` : prefixes for specific SERVICE and REGION, e.g. /SERVICE/EC2/us-east-1
   - `/REGION/<REGION>` : prefixes for specific REGION, e.g. /REGION/ap-southeast-1
   - `/NETWORK/<NETWORK>` : prefixes for specific network border group, e.g. /NETWORK/us-east-1-nyc-1
+  - `/createDate` :  ip-ranges.json publication date and time, in UTC YY-MM-DD-hh-mm-ss format
+  - `/syncToken` :  ip-ranges.json publication time, in Unix epoch time format
 
-Append `/IPv4.txt` or `/IPv6.txt` to limit IP prefixes to IPv4 or IPv6 respectively
+For IP prefixes, you can append `/IPv4.txt` or `/IPv6.txt` to filter by IPv4 or IPv6 respectively
 
 ## API Gateway Customisation
 Refer to [Amazon API Gateway documentation](https://docs.aws.amazon.com/apigateway/latest/developerguide/welcome.html) for HTTP API customisation options. Some examples include

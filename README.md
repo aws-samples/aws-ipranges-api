@@ -30,7 +30,7 @@ Specify a **Stack name** and adjust parameters values as desired. Parameters opt
 - `cpuArchitecture`: Instruction set architecture (x86_64 or arm64). Default is **arm64**
 - `lambdaFunctionName`: Lambda function name. Default is **aws-ipranges-api**
 - `lambdaAuthorizerFunctionName`: Lambda authorizer function name. Default is **aws-ipranges-api-authorizer**
-- `pythonRuntime`: Python 3 runtime version. Default is **python3.9**
+- `pythonRuntime`: Python 3 runtime version. Default is **python3.10**
 
 Continue **Next** with [Configure stack options](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-console-add-tags.html), [Review](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-using-console-create-stack-review.html) settings, and click **Create Stack** to launch your stack. 
 

@@ -68,7 +68,7 @@ Parameters:
     Type: String
     AllowedPattern: "python3\\.\\d{1,2}"
     ConstraintDescription: Enter a valid Python version
-    Default: python3.9
+    Default: python3.10
   cpuArchitecture:
     Type: String
     AllowedValues:

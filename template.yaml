@@ -477,7 +477,7 @@ Resources:
             import os
             import ipaddress
 
-            # AWS services to return for default API
+            # Allowed source IP prefixes
             allowed_networks = os.getenv('ALLOWED_NETWORKS', '0.0.0.0/0').split(',')
             if allowed_networks == ['']: 
               allowed_networks = ['0.0.0.0/0']

@@ -1,8 +1,6 @@
 ## AWS-IPRanges-API
 
-[Serverless](https://aws.amazon.com/serverless/) web site based on [Amazon API Gateway](https://aws.amazon.com/api-gateway/) and [AWS Lambda](https://aws.amazon.com/lambda/) that outputs IP prefixes from AWS ip-ranges.json for use by firewalls and other applications.
-
-This solution is mentioned in blog post [How to enhance CloudFront origin security of on-premise web servers using third-party firewalls](https://aws.amazon.com/blogs/networking-and-content-delivery/how-to-enhance-cloudfront-origin-security-of-on-premise-web-servers-using-third-party-firewalls/)
+[Serverless](https://aws.amazon.com/serverless/) web site based on [Amazon API Gateway](https://aws.amazon.com/api-gateway/) and [AWS Lambda](https://aws.amazon.com/lambda/) that outputs IP prefixes from AWS ip-ranges.json as web feeds for use by firewalls and other applications.
 
 
 
@@ -17,8 +15,10 @@ Typically, the firewall administrator will extract out required IP prefixes from
 
 This project makes IP prefixes available as web feeds for automatic updates by firewalls. Users have the option to filter IP prefixes by service, region and network border group, and in combined IPv4 and IPv6, IPv4 only or IPv6 only format. Entire solution is serverless and can be deployed via a single CloudFormation file. 
 
+Solution is mentioned in blog post [How to enhance CloudFront origin security of on-premise web servers using third-party firewalls](https://aws.amazon.com/blogs/networking-and-content-delivery/how-to-enhance-cloudfront-origin-security-of-on-premise-web-servers-using-third-party-firewalls/)
+
 ## Architecture Diagram
-<img width="1340" alt="image" src="https://user-images.githubusercontent.com/88474310/155283397-b34594ea-213d-4b8f-b391-6081087f1743.png">
+<img width="1340" alt="image" src="aws-ipranges-api.png">
 
 
 ## Deployment via CloudFormation console
@@ -30,7 +30,7 @@ Specify a **Stack name** and adjust parameters values as desired. Parameters opt
 - `cpuArchitecture`: Instruction set architecture (x86_64 or arm64). Default is **arm64**
 - `lambdaFunctionName`: Lambda function name. Default is **aws-ipranges-api**
 - `lambdaAuthorizerFunctionName`: Lambda authorizer function name. Default is **aws-ipranges-api-authorizer**
-- `pythonRuntime`: Python 3 runtime version. Default is **python3.10**
+- `pythonRuntime`: Python 3 runtime version. Default is **python3.11**
 
 Continue **Next** with [Configure stack options](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-console-add-tags.html), [Review](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-using-console-create-stack-review.html) settings, and click **Create Stack** to launch your stack. 
 

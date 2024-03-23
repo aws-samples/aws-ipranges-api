@@ -1,6 +1,6 @@
 ## AWS-IPRanges-API
 
-[Serverless](https://aws.amazon.com/serverless/) web site based on [Amazon API Gateway](https://aws.amazon.com/api-gateway/) and [AWS Lambda](https://aws.amazon.com/lambda/) that outputs IP prefixes from AWS ip-ranges.json as web feeds for use by firewalls and other applications.
+[Serverless](https://aws.amazon.com/serverless/) web site based on [Amazon API Gateway](https://aws.amazon.com/api-gateway/) and [AWS Lambda](https://aws.amazon.com/lambda/) that outputs IP prefixes from AWS ip-ranges.json as web feeds for use by firewalls and other applications. Also allows IP address lookup of corresponding Region, service and network border group. 
 
 
 
@@ -57,7 +57,11 @@ Use different URLs to return IP prefixes and other values. Example
   - `/SERVICE/<SERVICE>/<REGION>` : prefixes for specific SERVICE and REGION, e.g. `/SERVICE/EC2/us-east-1`
   - `/REGION/<REGION>` : prefixes for specific REGION, e.g. `/REGION/ap-southeast-1`
   - `/NETWORK/<NETWORK>` : prefixes for specific network border group, e.g. `/NETWORK/us-east-1-nyc-1`
-  - `/SEARCH/<IP ADDRESS>`: IPv4 or IPv6 address to query, e.g. `/SEARCH/13.34.96.224`
+  - `/SEARCH/<IP ADDRESS>`: IPv4 or IPv6 address to query, e.g. `/SEARCH/13.34.96.200`. This will return corresponding entries, e.g.
+    ```
+    ip_prefix,region,service,network_border_group
+    13.34.96.224/27,ap-southeast-1,AMAZON,ap-southeast-1
+    ```
   - `/createDate` :  ip-ranges.json publication date and time, in UTC YY-MM-DD-hh-mm-ss format
   - `/syncToken` :  ip-ranges.json publication time, in Unix epoch time format
 

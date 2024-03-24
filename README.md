@@ -30,7 +30,7 @@ Specify a **Stack name** and adjust parameters values as desired. Parameters opt
 - `cpuArchitecture`: Instruction set architecture (x86_64 or arm64). Default is **arm64**
 - `lambdaFunctionName`: Lambda function name. Default is **aws-ipranges-api**
 - `lambdaAuthorizerFunctionName`: Lambda authorizer function name. Default is **aws-ipranges-api-authorizer**
-- `pythonRuntime`: Python 3 runtime version. Default is **python3.11**
+- `pythonRuntime`: Python 3 runtime version. Default is **python3.12**
 
 Continue **Next** with [Configure stack options](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-console-add-tags.html), [Review](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-using-console-create-stack-review.html) settings, and click **Create Stack** to launch your stack. 
 
@@ -57,7 +57,7 @@ Use different URLs to return IP prefixes and other values. Example
   - `/SERVICE/<SERVICE>/<REGION>` : prefixes for specific SERVICE and REGION, e.g. `/SERVICE/EC2/us-east-1`
   - `/REGION/<REGION>` : prefixes for specific REGION, e.g. `/REGION/ap-southeast-1`
   - `/NETWORK/<NETWORK>` : prefixes for specific network border group, e.g. `/NETWORK/us-east-1-nyc-1`
-  - `/SEARCH/<IP ADDRESS>`: IPv4 or IPv6 address to query, e.g. `/SEARCH/13.34.96.200`. This will return corresponding entries, e.g.
+  - `/SEARCH/<IP ADDRESS>`: IPv4 or IPv6 address to query, e.g. `/SEARCH/13.34.96.200`. This will return any matching entries, e.g.
     ```
     ip_prefix,region,service,network_border_group
     13.34.96.224/27,ap-southeast-1,AMAZON,ap-southeast-1

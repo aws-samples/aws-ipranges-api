@@ -24,28 +24,54 @@ Solution is mentioned in blog post [How to enhance CloudFront origin security of
 ## Deployment via CloudFormation console
 Download [`template.yaml`](https://raw.githubusercontent.com/aws-samples/aws-ipranges-api/main/template.yaml) file and login to AWS [CloudFormation console](https://console.aws.amazon.com/cloudformation/home#/stacks/create/template). Choose **Create Stack**, **Upload a template file**, **Choose File**, select `template.yaml` and choose **Next**.
 
+### CloudFormation Parameters
 Specify a **Stack name** and adjust parameters values as desired. Parameters options include
-- `allowNetworks`: Source IP prefixes that are authorized to use API Gateway separated by commas. Default is **0.0.0.0/0**
+
+HTTP API
+- `allowNetworks`: Source IP prefixes that are authorized to use API separated by commas. Default is **0.0.0.0/0**
 - `awsServices`: Name of AWS services to return by root URL separated by commas. Default is **CLOUDFRONT_ORIGIN_FACING**
+
+Lambda
+- `pythonRuntime`: Python [runtime version](https://docs.aws.amazon.com/lambda/latest/dg/lambda-python.html). Default is **python3.12**
 - `cpuArchitecture`: Instruction set architecture (x86_64 or arm64). Default is **arm64**
 - `lambdaFunctionName`: Lambda function name. Default is **aws-ipranges-api**
 - `lambdaAuthorizerFunctionName`: Lambda authorizer function name. Default is **aws-ipranges-api-authorizer**
-- `pythonRuntime`: Python 3 runtime version. Default is **python3.12**
+
+[Optional] Custom domain name
+
+This section is optional
+- `customDomainName`: [custom domain name](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-custom-domain-names.html) for your API
+- `certificateArn`: ARN of [ACM certificate](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-custom-domain-names.html#http-api-custom-domain-names-certificates)
+- `disableDefaultEndPoint`: option to [disable default endpoint](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-disable-default-endpoint.html). This ensures that clients can only access API by using specified custom domain name
 
 Continue **Next** with [Configure stack options](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-console-add-tags.html), [Review](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-using-console-create-stack-review.html) settings, and click **Create Stack** to launch your stack. 
 
-After stack has been successfully created, its status changes to **CREATE_COMPLETE**. Go to **Outputs** tab to get `apiGatewayInvokeURL` value (in the format `https://<api-id>.execute-api.<region>.amazonaws.com`) for use by firewall. Refer to [Output options](#output-options) below for more details.
+After stack has been successfully created, its status changes to **CREATE_COMPLETE**. 
 
-  
+### CloudFormation Outputs
+The following are available in `Outputs` section 
+- `apiGatewayInvokeURL` (if  `disableDefaultEndPoint` is false ): URL of format `https://<api-id>.execute-api.<region>.amazonaws.com`) for use by firewall. Refer to [Output options](#output-options) below for details.
+- `apiFQDN` (if `customDomainName` is specified): Create a DNS CNAME or [Route 53 alias record](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-choosing-alias-non-alias.html) from your `customDomainName` to this value
+
+
+
+- `apiGatewayLog`: CloudWatch log URL for API Gateway
+- `lambdaFunctionLog`: CLoudWatch log URL for Lambda function
+- `lambdaAuthorizerFunctionLog`: CloudWatch log URL for Lambda authorizer function
+
+Refer to [Output options](#output-options) below for more details.
+
+
+ 
 ## Firewall Setup
 Firewalls that support external intel/threat feed for IP prefixes updates include (but not limited to)
-- Fortinet: [External Block List](https://docs.fortinet.com/document/fortigate/7.0.5/administration-guide/891236/external-blocklist-policy)
-- Palo Alto Networks: [External Dynamic List](https://docs.paloaltonetworks.com/pan-os/10-1/pan-os-admin/policy/use-an-external-dynamic-list-in-policy/configure-the-firewall-to-access-an-external-dynamic-list.html) 
+- Fortinet: [External Block List](https://docs.fortinet.com/document/fortigate/7.4.0/administration-guide/891236)
+- Palo Alto Networks: [External Dynamic List](https://docs.paloaltonetworks.com/pan-os/11-1/pan-os-admin/policy/use-an-external-dynamic-list-in-policy/configure-the-firewall-to-access-an-external-dynamic-list)
 - OPNsense: [URL Tables (IPs) Aliases](https://docs.opnsense.org/manual/aliases.html)
 - pfSense: [URL Table Aliases](https://docs.netgate.com/pfsense/en/latest/firewall/aliases.html#url-table-aliases)
 
 Refer to vendor website documentation for configuration steps.
-[AWS Network Firewall](https://aws.amazon.com/network-firewall/) users can check [Automated Network Firewall Rules for CloudFront IP Ranges](https://github.com/aws-samples/automated-network-firewall-rules-for-cloudfront-ip-ranges) project while Check Point users have access to AWS IP prefixes from [Updatable Objects](https://supportcenter.checkpoint.com/supportcenter/portal?eventSubmit_doGoviewsolutiondetails=&solutionid=sk131852) 
+Check Point users have access to AWS IP prefixes from [Updatable Objects](https://support.checkpoint.com/results/sk/sk131852) 
 
 ## Output options
 Use different URLs to return IP prefixes and other values. Example

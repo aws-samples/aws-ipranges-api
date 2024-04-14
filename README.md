@@ -51,16 +51,11 @@ After stack has been successfully created, its status changes to **CREATE_COMPLE
 ### CloudFormation Outputs
 The following are available in `Outputs` section 
 - `apiGatewayInvokeURL` (if  `disableDefaultEndPoint` is false ): URL of format `https://<api-id>.execute-api.<region>.amazonaws.com`) for use by firewall. Refer to [Output options](#output-options) below for details.
-- `apiFQDN` (if `customDomainName` is specified): Create a DNS CNAME or [Route 53 alias record](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-choosing-alias-non-alias.html) from your `customDomainName` to this value
-
-
+- `apiFQDN` (if `customDomainName` is specified): Create a DNS CNAME or [Route 53 alias](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-choosing-alias-non-alias.html) record of your `customDomainName` to this value
 
 - `apiGatewayLog`: CloudWatch log URL for API Gateway
 - `lambdaFunctionLog`: CLoudWatch log URL for Lambda function
 - `lambdaAuthorizerFunctionLog`: CloudWatch log URL for Lambda authorizer function
-
-Refer to [Output options](#output-options) below for more details.
-
 
  
 ## Firewall Setup

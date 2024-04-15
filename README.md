@@ -1,7 +1,6 @@
 ## AWS-IPRanges-API
 
-[Serverless](https://aws.amazon.com/serverless/) web site based on [Amazon API Gateway](https://aws.amazon.com/api-gateway/) and [AWS Lambda](https://aws.amazon.com/lambda/) that outputs IP prefixes from AWS ip-ranges.json as web feeds for use by firewalls and other applications. Also allows IP address lookup of corresponding Region, service and network border group. 
-
+[Serverless](https://aws.amazon.com/serverless/) web site that outputs IP prefixes from AWS ip-ranges.json as web feeds for use by firewalls and other applications. Also allows IP address lookup of corresponding Region, service and network border group. 
 
 
 ## Description
@@ -28,7 +27,7 @@ Download [`template.yaml`](https://raw.githubusercontent.com/aws-samples/aws-ipr
 Specify a **Stack name** and adjust parameters values as desired. Parameters options include
 
 HTTP API
-- `allowNetworks`: Source IP prefixes that are authorized to use API separated by commas. Default is **0.0.0.0/0**
+- `allowNetworks`: Source IP prefixes that are authorized to use site separated by commas. Default is **0.0.0.0/0**
 - `awsServices`: Name of AWS services to return by root URL separated by commas. Default is **CLOUDFRONT_ORIGIN_FACING**
 
 Lambda
@@ -39,10 +38,11 @@ Lambda
 
 [Optional] Custom domain name
 
-This section is optional
-- `customDomainName`: [custom domain name](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-custom-domain-names.html) for your API
+This section allows the use of [custom domain name](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-custom-domain-names.html) and is *optional*.
+
+- `customDomainName`: custom domain name for your API
 - `certificateArn`: ARN of [ACM certificate](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-custom-domain-names.html#http-api-custom-domain-names-certificates)
-- `disableDefaultEndPoint`: option to [disable default endpoint](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-disable-default-endpoint.html). This ensures that clients can only access API by using specified custom domain name
+- `disableDefaultEndPoint`: option to [disable default endpoint](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-disable-default-endpoint.html). This ensures that clients can only access site by using specified custom domain name
 
 Continue **Next** with [Configure stack options](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-console-add-tags.html), [Review](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-using-console-create-stack-review.html) settings, and click **Create Stack** to launch your stack. 
 
@@ -53,9 +53,9 @@ The following are available in `Outputs` section
 - `apiGatewayInvokeURL` (if  `disableDefaultEndPoint` is false ): URL of format `https://<api-id>.execute-api.<region>.amazonaws.com`) for use by firewall. Refer to [Output options](#output-options) below for details.
 - `apiFQDN` (if `customDomainName` is specified): Create a DNS CNAME or [Route 53 alias](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-choosing-alias-non-alias.html) record of your `customDomainName` to this value
 
-- `apiGatewayLog`: CloudWatch log URL for API Gateway
-- `lambdaFunctionLog`: CLoudWatch log URL for Lambda function
-- `lambdaAuthorizerFunctionLog`: CloudWatch log URL for Lambda authorizer function
+- `apiGatewayLog`: API Gateway CloudWatch log URL
+- `lambdaFunctionLog`: Lambda function CloudWatch log URL
+- `lambdaAuthorizerFunctionLog`: Lambda authorizer function CloudWatch log URL 
 
  
 ## Firewall Setup

@@ -52,14 +52,14 @@ Metadata:
       cpuArchitecture:
         default: Instruction set architecture
       lambdaFunctionName:
-        default: Lambda function name
+        default: Unique Lambda function name
       lambdaAuthorizerFunctionName:
-        default: Lambda Authorizer function name
+        default: Unique Lambda authorizer function name
 
       customDomainName:
         default: "Custom domain name to use (e.g. api.example.com)"
       certificateArn:
-        default: "ARN of certificate ( https://console.aws.amazon.com/acm/home?#/certificates/list )"
+        default: "ARN of certificate (e.g. arn:aws:acm:<REGION>:<ACCOUNT_ID>:certificate/<ID>). Get ARN from https://console.aws.amazon.com/acm/home?#/certificates/list"
       disableDefaultEndPoint:
         default: "Disable default endpoint"
 
@@ -132,7 +132,11 @@ Parameters:
     Default: false
 
 Conditions:
-  useCustomDomainName: !Not [!Equals [!Ref customDomainName, ""]]
+  useCustomDomainName:
+    !And [
+      !Not [!Equals [!Ref customDomainName, ""]],
+      !Not [!Equals [!Ref certificateArn, ""]],
+    ]
   enableDefaultEndPoint: !Equals [!Ref disableDefaultEndPoint, "false"]
 
 Resources:
@@ -170,6 +174,8 @@ Resources:
 
   lambdaFunctionLogGroup:
     Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
     Properties:
       KmsKeyId: !Ref AWS::NoValue
       RetentionInDays: !Ref AWS::NoValue
@@ -474,6 +480,8 @@ Resources:
 
   lambdaAuthorizerFunctionLogGroup:
     Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
     Properties:
       KmsKeyId: !Ref AWS::NoValue
       RetentionInDays: !Ref AWS::NoValue
@@ -582,6 +590,8 @@ Resources:
 
   apiLogGroup:
     Type: "AWS::Logs::LogGroup"
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
     Properties: # Size limit considerations at https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/AWS-logs-and-resource-policy.html#AWS-logs-infrastructure-CWL
       KmsKeyId: !Ref AWS::NoValue
       RetentionInDays: !Ref AWS::NoValue

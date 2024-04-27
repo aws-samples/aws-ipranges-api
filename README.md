@@ -21,7 +21,7 @@ Solution is mentioned in blog post [How to enhance CloudFront origin security of
 
 
 ## Deployment via CloudFormation console
-Download [`template.yaml`](https://raw.githubusercontent.com/aws-samples/aws-ipranges-api/main/template.yaml) file and login to AWS [CloudFormation console](https://console.aws.amazon.com/cloudformation/home#/stacks/create/template). Choose **Create Stack**, **Upload a template file**, **Choose File**, select `template.yaml` and choose **Next**.
+Download [`aws-ipranges-api.yaml`](https://raw.githubusercontent.com/aws-samples/aws-ipranges-api/main/aws-ipranges-api.yaml) file and login to AWS [CloudFormation console](https://console.aws.amazon.com/cloudformation/home#/stacks/create/template). Choose **Create Stack**, **Upload a template file**, **Choose File**, select `template.yaml` and choose **Next**.
 
 ### CloudFormation Parameters
 Specify a **Stack name** and adjust parameters values as desired. Parameters options include

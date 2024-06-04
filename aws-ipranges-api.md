@@ -8,7 +8,7 @@ Specify a **Stack name** and adjust parameters values as desired. Parameters opt
 
 HTTP API
 - `allowNetworks`: Source IP prefixes that are authorized to use API separated by commas. Default is **0.0.0.0/0**
-- `awsServices`: Name of AWS services to return by root URL separated by commas. Default is **CLOUDFRONT_ORIGIN_FACING**
+- `awsServices`: Names of AWS service to return by root URL separated by commas. Default is **CLOUDFRONT_ORIGIN_FACING**
 
 Lambda
 - `pythonRuntime`: Python [runtime version](https://docs.aws.amazon.com/lambda/latest/dg/lambda-python.html). Default is **python3.12**
@@ -40,6 +40,7 @@ The following are available in `Outputs` section
 ## API Gateway Customisation
 Refer to [Amazon API Gateway documentation](https://docs.aws.amazon.com/apigateway/latest/developerguide/welcome.html) for HTTP API customisation options. Some examples include
 - [Setting up custom domain names](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-custom-domain-names.html)
+- [Routing traffic to an Amazon API Gateway API by using your domain name](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-to-api-gateway.html)
 - [Configuring mutual TLS authentication](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-mutual-tls.html)
 - [Throttling requests to your HTTP API](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-throttling.html)
 - [Working with AWS Lambda authorizers for HTTP APIs](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-lambda-authorizer.html): Lambda authorizer is used to limit access by source IP prefixes

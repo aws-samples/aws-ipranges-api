@@ -7,7 +7,7 @@ Download [`aws-ipranges-alb.yaml`](aws-ipranges-alb.yaml) file and login to AWS 
 Specify a **Stack name** and adjust parameters values as desired. Parameters options include
 
 ALB API
-- `awsServices`: Name of AWS services to return by root URL separated by commas. Default is **CLOUDFRONT_ORIGIN_FACING**
+- `awsServices`: Names of AWS service to return by root URL separated by commas. Default is **CLOUDFRONT_ORIGIN_FACING**
 - `allowNetworks`: Source IP prefix that are allowed to access ALB. Default is **0.0.0.0/0**
 
 Lambda
@@ -36,6 +36,12 @@ The following are available in `Outputs` section
 - `albConsole`: ALB console URL
 - `lambdaFunctionLog`: CLoudWatch log URL for Lambda function
 
+## ALB Customisation
+Refer to [Application Load Balancer documentation](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/introduction.html) for customisation options. Some examples include
+- [Routing traffic to an ELB load balancer](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-to-elb-load-balancer.html)
+- [Application Load Balancers and AWS WAF](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/application-load-balancers.html#load-balancer-waf)
+- [Mutual authentication with TLS in Application Load Balancer](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/mutual-authentication.html)
+- [Enable access logs for your Application Load Balancer](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/enable-access-logging.html)
 
 ## Security
 

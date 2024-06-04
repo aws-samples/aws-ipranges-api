@@ -13,8 +13,8 @@ HTTP API
 Lambda
 - `pythonRuntime`: Python [runtime version](https://docs.aws.amazon.com/lambda/latest/dg/lambda-python.html). Default is **python3.12**
 - `cpuArchitecture`: Instruction set architecture (x86_64 or arm64). Default is **arm64**
-- `lambdaFunctionName`: Lambda function name. Default is **aws-ipranges-api**
-- `lambdaAuthorizerFunctionName`: Lambda authorizer function name. Default is **aws-ipranges-api-authorizer**
+- `lambdaFunctionName`: Lambda function name. Default is **aws-ipranges-API**
+- `lambdaAuthorizerFunctionName`: Lambda authorizer function name. Default is **aws-ipranges-API-authorizer**
 
 [Optional] Custom domain name
 

@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: HTTP API Gateway website that returns AWS IP prefixes from ip-ranges.json ( https://github.com/aws-samples/aws-ipranges-api )
+Description: CloudFront website that returns AWS IP prefixes from ip-ranges.json ( https://github.com/aws-samples/aws-ipranges-api )
 
 Metadata:
   License:
@@ -23,29 +23,27 @@ Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
       - Label:
-          default: HTTP API
+          default: CloudFront API
         Parameters:
           - awsServices
-          - allowNetworks
       - Label:
           default: Lambda
         Parameters:
           - pythonRuntime
           - cpuArchitecture
           - lambdaFunctionName
-          - lambdaAuthorizerFunctionName
       - Label:
-          default: "[Optional] Custom domain name"
+          default: CloudFront
         Parameters:
-          - customDomainName
-          - certificateArn
-          - disableDefaultEndPoint
+          - enableIPv6
+          - oacName
+          - viewerProtocolPolicy
+          - cachePolicy
+          - responseHeaderPolicy
 
     ParameterLabels:
       awsServices:
         default: "Default AWS Service IP prefixes to return separated by commas ( https://docs.aws.amazon.com/vpc/latest/userguide/aws-ip-ranges.html#aws-ip-syntax )"
-      allowNetworks:
-        default: "Allowed source IP prefixes separated by commas (e.g. 1.2.3.4/32,100.0.0.0/24). Get your IP from https://checkip.amazonaws.com "
 
       pythonRuntime:
         default: Python 3 runtime version ( https://docs.aws.amazon.com/lambda/latest/dg/lambda-python.html )
@@ -53,15 +51,40 @@ Metadata:
         default: Instruction set architecture ( https://docs.aws.amazon.com/lambda/latest/dg/foundation-arch.html )
       lambdaFunctionName:
         default: Unique Lambda function name
-      lambdaAuthorizerFunctionName:
-        default: Unique Lambda authorizer function name
 
-      customDomainName:
-        default: "Custom domain name to use (e.g. api.example.com)"
-      certificateArn:
-        default: "Certificate ARN. Get from https://console.aws.amazon.com/acm/home?#/certificates/list ( aws acm list-certificates )"
-      disableDefaultEndPoint:
-        default: "Disable default endpoint"
+      enableIPv6:
+        default: Enable IPv6
+      oacName:
+        default: Origin Access Control name
+      viewerProtocolPolicy:
+        default: Communication policy between viewer and CloudFront
+      cachePolicy:
+        default: Managed cache policy ( https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-cache-policies.html )
+      responseHeaderPolicy:
+        default: Managed response headers policy ( https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-response-headers-policies.html )
+
+Mappings:
+  cachePolicyMapping: # https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-cache-policies.html
+    CachingDisabled:
+      Value: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+    CachingOptimized:
+      Value: 658327ea-f89d-4fab-a63d-7e88639e58f6
+    CachingOptimizedForUncompressedObjects:
+      Value: b2884449-e4de-46a7-ac36-70bc7f1ddd6d
+    UseOriginCacheControlHeaders:
+      Value: 83da9c7e-98b4-4e11-a168-04f0df8e2c65
+
+  responseHeaderPolicyMapping: # https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-response-headers-policies.html
+    CORS-and-SecurityHeadersPolicy:
+      Value: e61eb60c-9c35-4d20-a928-2b84e02af89c
+    CORS-With-Preflight:
+      Value: 5cc3b908-e619-4b99-88e5-2cf7f45965bd
+    CORS-with-preflight-and-SecurityHeadersPolicy:
+      Value: eaab4381-ed33-4a86-88ca-d9558dc6cd63
+    SecurityHeadersPolicy:
+      Value: 67f7725c-6f97-4210-82d7-5512b31e9d03
+    SimpleCORS:
+      Value: 60669652-455b-4ae9-85a4-c4c02393f86c
 
 Parameters:
   awsServices:
@@ -92,21 +115,12 @@ Parameters:
       - WORKSPACES_GATEWAYS
     Default: CLOUDFRONT_ORIGIN_FACING
     ConstraintDescription: Enter a valid AWS service
-  allowNetworks:
-    Type: String
-    Default: 0.0.0.0/0
 
   lambdaFunctionName:
     Type: String
     AllowedPattern: "[a-zA-Z0-9]+[a-zA-Z0-9-]+[a-zA-Z0-9]+"
     ConstraintDescription: Enter a valid function name
-    MaxLength: 64
-    Default: aws-ipranges-API
-  lambdaAuthorizerFunctionName:
-    Type: String
-    AllowedPattern: "[a-zA-Z0-9]+[a-zA-Z0-9-]+[a-zA-Z0-9]+"
-    ConstraintDescription: Enter a valid function name
-    Default: aws-ipranges-API-authorizer
+    Default: aws-ipranges-CloudFront
   pythonRuntime:
     Type: String
     AllowedPattern: "python3\\.\\d{1,2}"
@@ -119,26 +133,41 @@ Parameters:
       - arm64
     Default: arm64
 
-  customDomainName:
-    Type: String
-    Default: ""
-  certificateArn:
-    Type: String
-    Default: ""
-  disableDefaultEndPoint:
+  enableIPv6:
     Type: String
     AllowedValues:
-      - true
-      - false
-    Default: false
+      - "Yes"
+      - "No"
+    Default: "Yes"
+  oacName:
+    Type: String
+    Default: aws-ipranges-cloudfront
+  viewerProtocolPolicy:
+    Type: String
+    AllowedValues:
+      - allow-all
+      - https-only
+      - redirect-to-https
+    Default: redirect-to-https
+  cachePolicy:
+    Type: String
+    AllowedValues:
+      - CachingDisabled
+      - CachingOptimized
+      - CachingOptimizedForUncompressedObjects
+    Default: CachingDisabled
+  responseHeaderPolicy:
+    Type: String
+    AllowedValues:
+      - SecurityHeadersPolicy
+      - CORS-and-SecurityHeadersPolicy
+      - CORS-With-Preflight
+      - CORS-with-preflight-and-SecurityHeadersPolicy
+      - SimpleCORS
+    Default: SecurityHeadersPolicy
 
 Conditions:
-  useCustomDomainName:
-    !And [
-      !Not [!Equals [!Ref customDomainName, ""]],
-      !Not [!Equals [!Ref certificateArn, ""]],
-    ]
-  enableDefaultEndPoint: !Equals [!Ref disableDefaultEndPoint, "false"]
+  hasIPv6: !Equals [!Ref enableIPv6, "Yes"]
 
 Resources:
   lambdaFunctionIamRole:
@@ -171,7 +200,7 @@ Resources:
         - Key: GitHub
           Value: https://github.com/aws-samples/aws-ipranges-api
         - Key: Description
-          Value: !Sub For Lambda function ${lambdaFunctionName}
+          Value: !Sub For lambda function ${lambdaFunctionName}
 
   lambdaFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -192,7 +221,7 @@ Resources:
   lambdaFunction:
     Type: AWS::Lambda::Function
     Properties:
-      Description: !Sub "[${AWS::StackName}] - Returns AWS IP prefixes for API Gateway"
+      Description: !Sub "[${AWS::StackName}] - Returns AWS IP prefixes for CloudFront"
       FunctionName: !Ref lambdaFunctionName
       Handler: "index.lambda_handler"
       MemorySize: 1769
@@ -446,267 +475,82 @@ Resources:
       FunctionName: !Ref lambdaFunction
       Description: Version 1.0
 
-  lambdaAuthorizerFunctionIamRole:
-    Type: AWS::IAM::Role
+  lambdaFunctionUrl:
+    Type: "AWS::Lambda::Url"
+    DependsOn: lambdaFunction
     Properties:
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - lambda.amazonaws.com
-            Action:
-              - sts:AssumeRole
-      Policies:
-        - PolicyName: lambdaAuthorizerFunctionPolicy
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: Allow
-                Action:
-                  - logs:CreateLogStream
-                  - logs:PutLogEvents
-                Resource: !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${lambdaAuthorizerFunctionName}:*
-      Tags:
-        - Key: StackName
-          Value: !Sub ${AWS::StackName}
-        - Key: StackId
-          Value: !Sub ${AWS::StackId}
-        - Key: GitHub
-          Value: https://github.com/aws-samples/aws-ipranges-api
-        - Key: Description
-          Value: !Sub For lambda function ${lambdaAuthorizerFunctionName}
+      AuthType: AWS_IAM
+      TargetFunctionArn: !GetAtt lambdaFunction.Arn
 
-  lambdaAuthorizerFunctionLogGroup:
-    Type: AWS::Logs::LogGroup
-    DeletionPolicy: Delete
-    UpdateReplacePolicy: Delete
-    Properties:
-      KmsKeyId: !Ref AWS::NoValue
-      RetentionInDays: !Ref AWS::NoValue
-      LogGroupName: !Sub /aws/lambda/${lambdaAuthorizerFunction}
-      Tags:
-        - Key: StackName
-          Value: !Sub ${AWS::StackName}
-        - Key: StackId
-          Value: !Sub ${AWS::StackId}
-        - Key: GitHub
-          Value: https://github.com/aws-samples/aws-ipranges-api
-
-  lambdaAuthorizerFunction:
-    Type: AWS::Lambda::Function
-    Properties:
-      Description: !Sub "[${AWS::StackName}] - Lambda Authorizer for API Gateway"
-      FunctionName: !Ref lambdaAuthorizerFunctionName
-      Handler: "index.lambda_handler"
-      MemorySize: 128
-      ReservedConcurrentExecutions: !Ref AWS::NoValue
-      Role: !GetAtt lambdaAuthorizerFunctionIamRole.Arn
-      Environment:
-        Variables:
-          ALLOWED_NETWORKS: !Ref allowNetworks
-      Runtime: !Ref pythonRuntime
-      Timeout: 5
-      Architectures:
-        - !Ref cpuArchitecture
-      Code:
-        ZipFile: |
-          # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-          # SPDX-License-Identifier: MIT-0
-
-          import os
-          import ipaddress
-
-          # Allowed source IP prefixes
-          allowed_networks = os.getenv('ALLOWED_NETWORKS', '0.0.0.0/0').split(',')
-          if allowed_networks == ['']: 
-            allowed_networks = ['0.0.0.0/0']
-
-          # See https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-lambda-authorizer.html for payload format
-          def lambda_handler(event, context):
-            sourceIp = event['requestContext']['http']['sourceIp']
-
-            print(f'Source IP:{sourceIp}, Allowed Networks:{allowed_networks}')
-            source_address = ipaddress.ip_address(sourceIp)
-            for allowed in allowed_networks:              
-              if source_address in ipaddress.ip_network(allowed, False):
-                print('Authorized: Yes')
-                return { 
-                  "isAuthorized": True
-                }
-            
-            print('Authorized: No')
-            return {
-              "isAuthorized": False
-            }
-      Tags:
-        - Key: StackName
-          Value: !Sub ${AWS::StackName}
-        - Key: StackId
-          Value: !Sub ${AWS::StackId}
-        - Key: GitHub
-          Value: https://github.com/aws-samples/aws-ipranges-api
-        - Key: Description
-          Value: !Sub Authorizer for ${AWS::StackName}-apiGateway
-
-  lambdaAuthorizerVersion:
-    Type: AWS::Lambda::Version
-    Properties:
-      FunctionName: !Ref lambdaAuthorizerFunction
-      Description: version 1.0
-
-  apiGateway:
-    Type: AWS::ApiGatewayV2::Api
-    Properties:
-      Name: !Sub "${AWS::StackName}-api"
-      Description: !Sub "[${AWS::StackName}] - returns AWS IP prefixes from ip-ranges.json"
-      ProtocolType: HTTP
-      DisableExecuteApiEndpoint: !Ref disableDefaultEndPoint
-      Tags:
-        StackName: !Sub ${AWS::StackName}
-        StackId: !Sub ${AWS::StackId}
-        GitHub: "https://github.com/aws-samples/aws-ipranges-api"
-
-  apiRoute:
-    Type: AWS::ApiGatewayV2::Route
-    Properties:
-      ApiId: !Ref apiGateway
-      RouteKey: "$default"
-      AuthorizationType: CUSTOM
-      AuthorizerId: !Ref apiAuthorizer
-      Target: !Sub "integrations/${apiGatewayIntegration}"
-
-  apiGatewayIntegration:
-    Type: "AWS::ApiGatewayV2::Integration"
-    Properties: # Uri at https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-custom-integrations.html
-      ApiId: !Ref apiGateway
-      Description: !Sub ${AWS::StackName} Lambda integration with ${apiGateway}
-      IntegrationType: AWS_PROXY
-      IntegrationUri: !Sub "arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaFunction.Arn}/invocations"
-      IntegrationMethod: POST
-      PayloadFormatVersion: "2.0"
-      TimeoutInMillis: 25000
-
-  apiLogGroup:
-    Type: "AWS::Logs::LogGroup"
-    DeletionPolicy: Delete
-    UpdateReplacePolicy: Delete
-    Properties: # Size limit considerations at https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/AWS-logs-and-resource-policy.html#AWS-logs-infrastructure-CWL
-      KmsKeyId: !Ref AWS::NoValue
-      RetentionInDays: !Ref AWS::NoValue
-      LogGroupName: !Sub /${AWS::StackName}/apiLog
-      Tags:
-        - Key: StackName
-          Value: !Sub ${AWS::StackName}
-        - Key: StackId
-          Value: !Sub ${AWS::StackId}
-        - Key: GitHub
-          Value: "https://github.com/aws-samples/aws-ipranges-api"
-
-  apiLogResourcePolicy:
-    Type: AWS::Logs::ResourcePolicy
-    Properties:
-      PolicyName: !Sub AWSLogDeliveryWrite-${AWS::StackName}
-      PolicyDocument: !Sub '{"Version":"2012-10-17","Statement":[{"Sid":"AWSLogDeliveryWrite","Effect":"Allow","Principal":{"Service":"delivery.logs.amazonaws.com"},"Action":["logs:CreateLogStream","logs:PutLogEvents"],"Resource":"arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/${AWS::StackName}/apiLog:log-stream:*","Condition":{"StringEquals":{"aws:SourceAccount":"${AWS::AccountId}"},"ArnLike":{"aws:SourceArn":"arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:*"}}}]}'
-
-  apiStage:
-    Type: "AWS::ApiGatewayV2::Stage"
-    DependsOn: apiLogResourcePolicy
-    Properties: # Account limits at https://docs.aws.amazon.com/apigateway/latest/developerguide/limits.html#apigateway-account-level-limits-table
-      Description: !Sub ${AWS::StackName} API stage for ${apiGateway}
-      StageName: $default
-      AutoDeploy: true
-      ApiId: !Ref apiGateway
-      DefaultRouteSettings:
-        DetailedMetricsEnabled: true
-        #ThrottlingBurstLimit: 50
-        #ThrottlingRateLimit: 10
-      AccessLogSettings: # https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-mapping-template-reference.html
-        DestinationArn: !GetAtt apiLogGroup.Arn
-        Format: "$context.identity.sourceIp,$context.path,$context.requestTime,$context.httpMethod,$context.routeKey,$context.protocol,$context.status,$context.responseLength,$context.requestId"
-      Tags:
-        StackName: !Sub ${AWS::StackName}
-        StackId: !Sub ${AWS::StackId}
-        GitHub: "https://github.com/aws-samples/aws-ipranges-api"
-
-  apiAuthorizer:
-    Type: AWS::ApiGatewayV2::Authorizer
-    Properties:
-      ApiId: !Ref apiGateway
-      AuthorizerType: REQUEST
-      AuthorizerPayloadFormatVersion: 2.0
-      AuthorizerResultTtlInSeconds: 10
-      IdentitySource:
-        - $context.identity.sourceIp
-      AuthorizerUri: !Sub arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaAuthorizerFunction.Arn}/invocations
-      EnableSimpleResponses: True
-      Name: !Sub ${AWS::StackName}-authorizer
-
-  apiTriggerAuthorizerPermission:
+  lambdaFunctionUrlPermission:
     Type: "AWS::Lambda::Permission"
     Properties:
-      Action: lambda:InvokeFunction
-      FunctionName: !GetAtt lambdaAuthorizerFunction.Arn
-      Principal: apigateway.amazonaws.com
-      SourceArn: !Sub arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${apiGateway}/*
+      FunctionName: !Ref lambdaFunction
+      Action: "lambda:InvokeFunctionUrl"
+      SourceArn: !Sub arn:${AWS::Partition}:cloudfront::${AWS::AccountId}:distribution/${cloudFrontDistribution.Id}
+      Principal: "cloudfront.amazonaws.com"
 
-  apiTriggerPermission:
-    Type: "AWS::Lambda::Permission"
-    Properties: # See https://docs.aws.amazon.com/lambda/latest/dg/services-apigateway.html#apigateway-permissions
-      Action: lambda:InvokeFunction
-      FunctionName: !GetAtt lambdaFunction.Arn
-      Principal: apigateway.amazonaws.com
-      SourceArn: !Sub "arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${apiGateway}/*"
-
-  apiCustomDomainName:
-    Condition: useCustomDomainName
-    Type: AWS::ApiGatewayV2::DomainName
+  cloudFrontOriginAccessControl:
+    Type: "AWS::CloudFront::OriginAccessControl"
     Properties:
-      DomainName: !Ref customDomainName
-      DomainNameConfigurations:
-        - CertificateArn: !Ref certificateArn
-          EndpointType: REGIONAL
-          SecurityPolicy: TLS_1_2
+      OriginAccessControlConfig:
+        Name: !Ref oacName
+        SigningBehavior: "always"
+        Description: !Sub "OAC for ${lambdaFunctionName}"
+        SigningProtocol: "sigv4"
+        OriginAccessControlOriginType: "lambda"
+
+  cloudFrontDistribution:
+    Type: "AWS::CloudFront::Distribution"
+    Properties:
+      DistributionConfig:
+        Origins:
+          - OriginAccessControlId: !Ref cloudFrontOriginAccessControl
+            CustomOriginConfig:
+              OriginSSLProtocols:
+                - "TLSv1.2"
+              OriginProtocolPolicy: "https-only"
+            DomainName:
+              !Select [2, !Split ["/", !GetAtt lambdaFunctionUrl.FunctionUrl]]
+            Id: !Ref lambdaFunctionName
+        DefaultCacheBehavior:
+          Compress: true
+          TargetOriginId: !Ref lambdaFunctionName
+          ViewerProtocolPolicy: !Ref viewerProtocolPolicy
+          CachePolicyId:
+            !FindInMap [cachePolicyMapping, !Ref cachePolicy, Value]
+          ResponseHeadersPolicyId:
+            !FindInMap [
+              responseHeaderPolicyMapping,
+              !Ref responseHeaderPolicy,
+              Value,
+            ]
+          OriginRequestPolicyId: "b689b0a8-53d0-40ab-baf2-68738e2966ac" # https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-origin-request-policies.html
+          AllowedMethods:
+            - "HEAD"
+            - "GET"
+          CachedMethods:
+            - "HEAD"
+            - "GET"
+        HttpVersion: "http2and3"
+        Enabled: true
+        IPV6Enabled: !If [hasIPv6, true, false]
+        Comment: !Sub "CloudFront distribution for ${lambdaFunctionName}"
       Tags:
-        StackName: !Sub ${AWS::StackName}
-        StackId: !Sub ${AWS::StackId}
-        GitHub: "https://github.com/aws-samples/aws-ipranges-api"
-        Description: !Sub "Custom domain name for ${apiGateway}"
-
-  apiMapping:
-    Condition: useCustomDomainName
-    DependsOn:
-      - apiCustomDomainName
-      - apiStage
-    Type: AWS::ApiGatewayV2::ApiMapping
-    Properties:
-      DomainName: !Ref customDomainName
-      ApiId: !Ref apiGateway
-      Stage: $default
+        - Key: StackName
+          Value: !Sub ${AWS::StackName}
+        - Key: StackId
+          Value: !Sub ${AWS::StackId}
 
 Outputs:
-  apiInvokeURL:
-    Condition: useCustomDomainName
-    Description: "Custom domain name for use by firewall or application. Create DNS record first"
-    Value: !Sub "https://${customDomainName}"
+  cloudFrontURL:
+    Description: CloudFront distribution URL
+    Value: !Sub "https://${cloudFrontDistribution.DomainName}"
 
-  apiFQDN:
-    Condition: useCustomDomainName
-    Description: "Create your customDomainName DNS record to this FQDN"
-    Value: !GetAtt apiCustomDomainName.RegionalDomainName
+  cloudFrontConsole:
+    Description: CloudFront console
+    Value: !Sub "https://console.aws.amazon.com/cloudfront/home#/distributions/${cloudFrontDistribution.Id}"
 
-  apiGatewayInvokeURL:
-    Condition: enableDefaultEndPoint
-    Description: URL for use by firewall or application
-    Value: !GetAtt apiGateway.ApiEndpoint
-
-  apiGatewayLog:
-    Description: Cloudwatch log for API Gateway
-    Value: !Sub https://console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#logsV2:log-groups/log-group/$252F${AWS::StackName}$252FapiLog
   lambdaFunctionLog:
     Description: Cloudwatch log for Lambda function
     Value: !Sub https://console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#logsV2:log-groups/log-group/$252Faws$252Flambda$252F${lambdaFunctionName}
-  lambdaAuthorizerFunctionLog:
-    Description: Cloudwatch log for Lambda authorizer function
-    Value: !Sub https://console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#logsV2:log-groups/log-group/$252Faws$252Flambda$252F${lambdaAuthorizerFunctionName}

@@ -2,7 +2,7 @@
 
 
 ## Deployment via CloudFormation console
-Download [`aws-ipranges-cloudfront.yaml`](aws-ipranges-cloudfront.yaml) file and login to AWS [CloudFormation console](https://console.aws.amazon.com/cloudformation/home#/stacks/create/template). Choose **Create Stack**, **Upload a template file**, **Choose File**, select `aws-ipranges-api-alb.yaml` and choose **Next**.
+Download [`aws-ipranges-cloudfront.yaml`](aws-ipranges-cloudfront.yaml) file and login to AWS [CloudFormation console](https://console.aws.amazon.com/cloudformation/home#/stacks/create/template). Choose **Create Stack**, **Upload a template file**, **Choose File**, select `aws-ipranges-cloudfront.yaml` and choose **Next**.
 
 ### CloudFormation Parameters
 Specify a **Stack name** and adjust parameters values as desired. Parameters options include

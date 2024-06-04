@@ -13,7 +13,7 @@ ALB API
 Lambda
 - `pythonRuntime`: Python [runtime version](https://docs.aws.amazon.com/lambda/latest/dg/lambda-python.html). Default is **python3.12**
 - `cpuArchitecture`: Instruction set architecture (x86_64 or arm64). Default is **arm64**
-- `lambdaFunctionName`: Lambda function name. Default is **aws-ipranges-alb**
+- `lambdaFunctionName`: Lambda function name. Default is **aws-ipranges-ALB**
 
 Load Balancer
 - `targetGroupName`: [Target group](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-target-groups.html) name

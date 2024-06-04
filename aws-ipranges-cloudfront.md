@@ -13,7 +13,7 @@ CloudFront API
 Lambda
 - `pythonRuntime`: Python [runtime version](https://docs.aws.amazon.com/lambda/latest/dg/lambda-python.html). Default is **python3.12**
 - `cpuArchitecture`: Instruction set architecture (x86_64 or arm64). Default is **arm64**
-- `lambdaFunctionName`: Lambda function name. Default is **aws-ipranges-api-alb**
+- `lambdaFunctionName`: Lambda function name. Default is **aws-ipranges-CloudFront**
 
 CloudFront
 - `enableIPv6`: Enable or disable IPv6. Default is `yes`

@@ -21,11 +21,10 @@ Solution is mentioned in blog post [How to enhance CloudFront origin security of
 
 
 ## Deployment Options
-This solution website can be implemented using different AWS Services.
-Click on link below for deployment details:
-- [HTTP API](aws-ipranges-api.md) Gateway
+The solution can be implemented using different AWS Services. Click on links below for deployment details:
+- [Amazon API Gateway](aws-ipranges-api.md) 
 - [Application Load Balancer](aws-ipranges-alb.md)
-- [CloudFront](aws-ipranges-cloudfront.md)
+- [Amazon CloudFront](aws-ipranges-cloudfront.md)
 
 
 ## Firewall Setup

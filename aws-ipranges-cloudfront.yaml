@@ -200,7 +200,7 @@ Resources:
         - Key: GitHub
           Value: https://github.com/aws-samples/aws-ipranges-api
         - Key: Description
-          Value: !Sub For lambda function ${lambdaFunctionName}
+          Value: !Sub For Lambda function ${lambdaFunctionName}
 
   lambdaFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -269,8 +269,8 @@ Resources:
             response = request.urlopen('https://ip-ranges.amazonaws.com/ip-ranges.json')
             data = response.read()
             ipranges_json = json.loads(data)
-            createDate = ipranges_json['createDate'] 
-            syncToken = ipranges_json['syncToken']              
+            createDate = ipranges_json['createDate']
+            syncToken = ipranges_json['syncToken']
 
             url = event['requestContext']['http']['path']
             if url.lower() == '/favicon.ico':
@@ -278,15 +278,15 @@ Resources:
                 'statusCode': 404,
                 'body': 'Not Found!',
                 "headers": {
-                    "content-type": "text/html"                 
-                  }        
-                }   
+                    "content-type": "text/html"
+                  }
+                }
             elif url.lower() == '/robots.txt':
               return {
                 'statusCode': 200,
                 'body' : 'User-agent: *\nDisallow: /',
                 "headers": {
-                   "content-type": "text/plain" 
+                   "content-type": "text/plain"
                 }
               }
             elif url.lower() == '/createdate':
@@ -294,15 +294,15 @@ Resources:
                 'statusCode': 200,
                 'body' : createDate,
                 "headers": {
-                   "content-type": "text/plain" 
+                   "content-type": "text/plain"
                 }
-              }              
+              }
             elif url.lower() == '/synctoken':
               return {
                 'statusCode': 200,
                 'body' : syncToken,
                 "headers": {
-                   "content-type": "text/plain" 
+                   "content-type": "text/plain"
                 }
               }
 
@@ -322,10 +322,10 @@ Resources:
             args = url.split('/')
             responseBody = ''
 
-            # SERVICES and REGIONS to filter by?            
+            # SERVICES and REGIONS to filter by?
             SERVICES = all_aws_services.copy()
             REGIONS = all_aws_regions.copy()
-            NETWORKS = all_aws_networks.copy()              
+            NETWORKS = all_aws_networks.copy()
             # return list of all prefixes / services / regions / network_border_groups
             if len(args) == 2:
               SERVICES = default_services
@@ -347,12 +347,12 @@ Resources:
                     "path" : url,
                     "syncToken": ipranges_json['syncToken'],
                     "createDate": ipranges_json['createDate']
-                    }        
+                    }
                 }
             elif len(args) >= 3:
               # /SERVICE/<SERVICE>/<REGION>
               if args[1].upper()=='SERVICE' and args[2] in all_aws_services:
-                SERVICES = [args[2]]                  
+                SERVICES = [args[2]]
                 if len(args) >=4 and args[3] in all_aws_regions:
                   REGIONS = [args[3]]
               # /REGION/<REGION>/<SERVICE>
@@ -387,26 +387,26 @@ Resources:
                       "path" : url,
                       "syncToken": ipranges_json['syncToken'],
                       "createDate": ipranges_json['createDate']
-                    }        
+                    }
                   }
                 else:
                   return {
                     'statusCode': 404,
                     'body': 'Not AWS IP address',
                     "headers": {
-                      "content-type": "text/html"                 
-                    }        
-                  }                  
+                      "content-type": "text/html"
+                    }
+                  }
               else:
                 return {
                   'statusCode': 404,
                   'body': 'Not Found!',
                   "headers": {
-                    "content-type": "text/html"                 
-                  }        
-                }                  
+                    "content-type": "text/html"
+                  }
+                }
 
-            # IPv4 / IPv6 only? : 
+            # IPv4 / IPv6 only? :
             ipv4_only = url.upper().endswith('/IPV4.TXT')
             ipv6_only = url.upper().endswith('/IPV6.TXT')              
 
@@ -425,10 +425,10 @@ Resources:
                   if i['service'] not in aws_service:
                     aws_service.append(i['service'])
                   if i['network_border_group'] not in aws_network:
-                    aws_network.append(i['network_border_group']) 
-              prefixes = '\n'.join(sorted(ipv4_prefixes, key = ipaddress.IPv4Network)) 
+                    aws_network.append(i['network_border_group'])
+              prefixes = '\n'.join(sorted(ipv4_prefixes, key = ipaddress.IPv4Network))
 
-            ipv6_prefixes = list()  
+            ipv6_prefixes = list()
             if not ipv4_only:
               for i in ipranges_json['ipv6_prefixes']:
                 if i['service'] in SERVICES and i['region'] in REGIONS and i['network_border_group'] in NETWORKS and i['ipv6_prefix'] not in ipv6_prefixes:
@@ -440,7 +440,7 @@ Resources:
                   if i['network_border_group'] not in aws_network:
                     aws_network.append(i['network_border_group'])
               if len(prefixes) > 0:
-                prefixes += '\n'              
+                prefixes += '\n'
               prefixes += '\n'.join(sorted(ipv6_prefixes, key = ipaddress.IPv6Network))
 
             sourceIp = event['requestContext']['http']['sourceIp']
@@ -456,8 +456,8 @@ Resources:
                 "aws-network" : ','.join(sorted(aws_network)),
                 "path" : url,
                 "syncToken": syncToken,
-                "createDate": createDate               
-                }        
+                "createDate": createDate
+                }
               }
       Tags:
         - Key: StackName

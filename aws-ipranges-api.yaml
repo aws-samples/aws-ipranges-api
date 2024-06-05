@@ -128,9 +128,9 @@ Parameters:
   disableDefaultEndPoint:
     Type: String
     AllowedValues:
-      - true
-      - false
-    Default: false
+      - "Yes"
+      - "No"
+    Default: "No"
 
 Conditions:
   useCustomDomainName:
@@ -138,7 +138,7 @@ Conditions:
       !Not [!Equals [!Ref customDomainName, ""]],
       !Not [!Equals [!Ref certificateArn, ""]],
     ]
-  enableDefaultEndPoint: !Equals [!Ref disableDefaultEndPoint, "false"]
+  enableDefaultEndPoint: !Equals [!Ref disableDefaultEndPoint, "No"]
 
 Resources:
   lambdaFunctionIamRole:
@@ -240,8 +240,9 @@ Resources:
             response = request.urlopen('https://ip-ranges.amazonaws.com/ip-ranges.json')
             data = response.read()
             ipranges_json = json.loads(data)
-            createDate = ipranges_json['createDate'] 
-            syncToken = ipranges_json['syncToken']              
+            createDate = ipranges_json['createDate']
+            syncToken = ipranges_json['syncToken']
+            hstsValue = "max-age=31536000"
 
             url = event['requestContext']['http']['path']
             if url.lower() == '/favicon.ico':
@@ -249,15 +250,17 @@ Resources:
                 'statusCode': 404,
                 'body': 'Not Found!',
                 "headers": {
-                    "content-type": "text/html"                 
-                  }        
-                }   
+                    "content-type": "text/html",
+                    "Strict-Transport-Security": hstsValue
+                  }
+                }
             elif url.lower() == '/robots.txt':
               return {
                 'statusCode': 200,
                 'body' : 'User-agent: *\nDisallow: /',
                 "headers": {
-                   "content-type": "text/plain" 
+                   "content-type": "text/plain",
+                   "Strict-Transport-Security": hstsValue
                 }
               }
             elif url.lower() == '/createdate':
@@ -265,15 +268,17 @@ Resources:
                 'statusCode': 200,
                 'body' : createDate,
                 "headers": {
-                   "content-type": "text/plain" 
+                   "content-type": "text/plain",
+                   "Strict-Transport-Security": hstsValue
                 }
-              }              
+              }
             elif url.lower() == '/synctoken':
               return {
                 'statusCode': 200,
                 'body' : syncToken,
                 "headers": {
-                   "content-type": "text/plain" 
+                   "content-type": "text/plain",
+                   "Strict-Transport-Security": hstsValue
                 }
               }
 
@@ -293,10 +298,10 @@ Resources:
             args = url.split('/')
             responseBody = ''
 
-            # SERVICES and REGIONS to filter by?            
+            # SERVICES and REGIONS to filter by?
             SERVICES = all_aws_services.copy()
             REGIONS = all_aws_regions.copy()
-            NETWORKS = all_aws_networks.copy()              
+            NETWORKS = all_aws_networks.copy()
             # return list of all prefixes / services / regions / network_border_groups
             if len(args) == 2:
               SERVICES = default_services
@@ -317,13 +322,14 @@ Resources:
                     "content-type": "text/plain",
                     "path" : url,
                     "syncToken": ipranges_json['syncToken'],
-                    "createDate": ipranges_json['createDate']
-                    }        
+                    "createDate": ipranges_json['createDate'],
+                    "Strict-Transport-Security": hstsValue
+                    }
                 }
             elif len(args) >= 3:
               # /SERVICE/<SERVICE>/<REGION>
               if args[1].upper()=='SERVICE' and args[2] in all_aws_services:
-                SERVICES = [args[2]]                  
+                SERVICES = [args[2]]
                 if len(args) >=4 and args[3] in all_aws_regions:
                   REGIONS = [args[3]]
               # /REGION/<REGION>/<SERVICE>
@@ -357,27 +363,30 @@ Resources:
                       "content-type": "text/plain",
                       "path" : url,
                       "syncToken": ipranges_json['syncToken'],
-                      "createDate": ipranges_json['createDate']
-                    }        
+                      "createDate": ipranges_json['createDate'],
+                      "Strict-Transport-Security": hstsValue
+                    }
                   }
                 else:
                   return {
                     'statusCode': 404,
                     'body': 'Not AWS IP address',
                     "headers": {
-                      "content-type": "text/html"                 
-                    }        
-                  }                  
+                      "content-type": "text/html",
+                      "Strict-Transport-Security": hstsValue
+                    }
+                  }
               else:
                 return {
                   'statusCode': 404,
                   'body': 'Not Found!',
                   "headers": {
-                    "content-type": "text/html"                 
-                  }        
-                }                  
+                    "content-type": "text/html",
+                    "Strict-Transport-Security": hstsValue
+                  }
+                }
 
-            # IPv4 / IPv6 only? : 
+            # IPv4 / IPv6 only? :
             ipv4_only = url.upper().endswith('/IPV4.TXT')
             ipv6_only = url.upper().endswith('/IPV6.TXT')              
 
@@ -396,10 +405,10 @@ Resources:
                   if i['service'] not in aws_service:
                     aws_service.append(i['service'])
                   if i['network_border_group'] not in aws_network:
-                    aws_network.append(i['network_border_group']) 
-              prefixes = '\n'.join(sorted(ipv4_prefixes, key = ipaddress.IPv4Network)) 
+                    aws_network.append(i['network_border_group'])
+              prefixes = '\n'.join(sorted(ipv4_prefixes, key = ipaddress.IPv4Network))
 
-            ipv6_prefixes = list()  
+            ipv6_prefixes = list()
             if not ipv4_only:
               for i in ipranges_json['ipv6_prefixes']:
                 if i['service'] in SERVICES and i['region'] in REGIONS and i['network_border_group'] in NETWORKS and i['ipv6_prefix'] not in ipv6_prefixes:
@@ -411,7 +420,7 @@ Resources:
                   if i['network_border_group'] not in aws_network:
                     aws_network.append(i['network_border_group'])
               if len(prefixes) > 0:
-                prefixes += '\n'              
+                prefixes += '\n'
               prefixes += '\n'.join(sorted(ipv6_prefixes, key = ipaddress.IPv6Network))
 
             sourceIp = event['requestContext']['http']['sourceIp']
@@ -427,8 +436,9 @@ Resources:
                 "aws-network" : ','.join(sorted(aws_network)),
                 "path" : url,
                 "syncToken": syncToken,
-                "createDate": createDate               
-                }        
+                "createDate": createDate,
+                "Strict-Transport-Security": hstsValue
+                }
               }
       Tags:
         - Key: StackName
@@ -529,10 +539,10 @@ Resources:
 
             print(f'Source IP:{sourceIp}, Allowed Networks:{allowed_networks}')
             source_address = ipaddress.ip_address(sourceIp)
-            for allowed in allowed_networks:              
+            for allowed in allowed_networks:
               if source_address in ipaddress.ip_network(allowed, False):
                 print('Authorized: Yes')
-                return { 
+                return {
                   "isAuthorized": True
                 }
             
@@ -562,7 +572,7 @@ Resources:
       Name: !Sub "${AWS::StackName}-api"
       Description: !Sub "[${AWS::StackName}] - returns AWS IP prefixes from ip-ranges.json"
       ProtocolType: HTTP
-      DisableExecuteApiEndpoint: !Ref disableDefaultEndPoint
+      DisableExecuteApiEndpoint: !If [enableDefaultEndPoint, false, true]
       Tags:
         StackName: !Sub ${AWS::StackName}
         StackId: !Sub ${AWS::StackId}
@@ -686,6 +696,10 @@ Resources:
       Stage: $default
 
 Outputs:
+  apiConsole:
+    Description: "API Gateway console"
+    Value: !Sub "https://${AWS::Region}.console.aws.amazon.com/apigateway/main/api-detail?api=${apiGateway.ApiId}&region=${AWS::Region}"
+
   apiInvokeURL:
     Condition: useCustomDomainName
     Description: "Custom domain name for use by firewall or application. Create DNS record first"
@@ -704,6 +718,7 @@ Outputs:
   apiGatewayLog:
     Description: Cloudwatch log for API Gateway
     Value: !Sub https://console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#logsV2:log-groups/log-group/$252F${AWS::StackName}$252FapiLog
+
   lambdaFunctionLog:
     Description: Cloudwatch log for Lambda function
     Value: !Sub https://console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#logsV2:log-groups/log-group/$252Faws$252Flambda$252F${lambdaFunctionName}

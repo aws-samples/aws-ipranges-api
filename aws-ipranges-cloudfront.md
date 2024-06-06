@@ -8,17 +8,17 @@ Download [`aws-ipranges-cloudfront.yaml`](aws-ipranges-cloudfront.yaml) file and
 Specify a **Stack name** and adjust parameters values as desired. Parameters options include
 
 CloudFront API
-- `awsServices`: Names of AWS service to return by root URL separated by commas. Default is **CLOUDFRONT_ORIGIN_FACING**
+- `awsServices`: names of AWS service to return by root URL separated by commas. Default is `CLOUDFRONT_ORIGIN_FACING`
 
 Lambda
-- `pythonRuntime`: Python [runtime version](https://docs.aws.amazon.com/lambda/latest/dg/lambda-python.html). Default is **python3.12**
-- `cpuArchitecture`: Instruction set architecture (x86_64 or arm64). Default is **arm64**
-- `lambdaFunctionName`: Lambda function name. Default is **aws-ipranges-CloudFront**
+- `pythonRuntime`: Python [runtime version](https://docs.aws.amazon.com/lambda/latest/dg/lambda-python.html). Default is `python3.12`
+- `cpuArchitecture`: [instruction set architecture](https://docs.aws.amazon.com/lambda/latest/dg/foundation-arch.html), either `x86_64` or `arm64`. Default is `arm64`
+- `lambdaFunctionName`: unique Lambda function name
 
 CloudFront
-- `enableIPv6`: Enable or disable IPv6. Default is `yes`
-- `oacName`: name of [Origin Access Control (OAC)](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-restricting-access-to-lambda.html) to use with Lambda function URL origin
-- `viewerProtocolPolicy`: configure viewer access by HTTP and/or HTTPS. Default is `redirect-to-https`
+- `enableIPv6`: enable or disable IPv6. Default is `yes`
+- `oacName`: unique [Origin Access Control (OAC)](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-restricting-access-to-lambda.html) name to use with Lambda function URL origin
+- `viewerProtocolPolicy`: configure viewer access policy for HTTP and HTTPS requests. Default is `redirect-to-https`
 - `cachePolicy`: [managed cache policy](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-cache-policies.html). Default is `CachingDisabled`
 - `responseHeaderPolicy`: [managed response headers policy](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-response-headers-policies.html). Default is `SecurityHeadersPolicy`
 
@@ -29,7 +29,7 @@ After stack has been successfully created, its status changes to **CREATE_COMPLE
 ### CloudFormation Outputs
 The following are available in `Outputs` section 
 - `cloudFrontURL`: CloudFront distribution domain name
-- `cloudFrontConsole`: URL to CloudFront distribution console
+- `cloudFrontConsole`: CloudFront console URL
 - `lambdaFunctionLog`: CLoudWatch log URL for Lambda function
 
 ## CloudFront Customisation

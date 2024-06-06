@@ -26,7 +26,8 @@ Metadata:
           default: ALB API
         Parameters:
           - awsServices
-          - allowNetworks
+          - allowedIPv4prefix
+          - allowedIPv6prefix
       - Label:
           default: Lambda
         Parameters:
@@ -34,24 +35,31 @@ Metadata:
           - cpuArchitecture
           - lambdaFunctionName
       - Label:
-          default: Application Load Balancer
+          default: Load Balancer
         Parameters:
+          - albScheme
           - targetGroupName
-          - certificateArn
-          - securityPolicy
       - Label:
           default: Networking
         Parameters:
-          - albScheme
           - ipAddressType
           - vpc
           - subnets
+      - Label:
+          default: "[Optional] HTTPS listener"
+        Parameters:
+          - certificateArn
+          - securityPolicy
+          - redirectHTTPtoHTTPS
+          - sendHSTSheader
 
     ParameterLabels:
       awsServices:
         default: "Default AWS Service IP prefixes to return separated by commas ( https://docs.aws.amazon.com/vpc/latest/userguide/aws-ip-ranges.html#aws-ip-syntax )"
-      allowNetworks:
-        default: "Allowed source IP prefix (e.g. 1.2.3.4/32). Get your IP from https://checkip.amazonaws.com "
+      allowedIPv4prefix:
+        default: "Allowed source IPv4 prefix (e.g. 1.2.3.4/32). Get your IP from https://checkip.amazonaws.com"
+      allowedIPv6prefix:
+        default: "Allowed source IPv6 prefix"
 
       pythonRuntime:
         default: Python 3 runtime version ( https://docs.aws.amazon.com/lambda/latest/dg/lambda-python.html )
@@ -60,21 +68,26 @@ Metadata:
       lambdaFunctionName:
         default: Unique Lambda function name
 
-      targetGroupName:
-        default: Unique target group name
-      certificateArn:
-        default: "[Optional] TLS Certificate ARN for HTTPS listener. Get from https://console.aws.amazon.com/acm/home?#/certificates/list ( aws acm list-certificates )"
-      securityPolicy:
-        default: "HTTPS listener security policy ( https://docs.aws.amazon.com/elasticloadbalancing/latest/application/create-https-listener.html#describe-ssl-policies )"
-
       albScheme:
         default: Load balancer scheme (internal or internet facing)
+      targetGroupName:
+        default: Unique target group name
+
       ipAddressType:
         default: IPv4 only, IPv6 only or dual stack (IPv4-and-IPv6)
       vpc:
         default: VPC to provision ALB
       subnets:
         default: Subnets to provision ALB (choose at least 2)
+
+      certificateArn:
+        default: "Certificate ARN. Get from https://console.aws.amazon.com/acm/home?#/certificates/list ( aws acm list-certificates )"
+      securityPolicy:
+        default: "HTTPS listener security policy ( https://docs.aws.amazon.com/elasticloadbalancing/latest/application/create-https-listener.html#describe-ssl-policies )"
+      redirectHTTPtoHTTPS:
+        default: Redirect HTTP requests to HTTPS
+      sendHSTSheader:
+        default: Send HSTS (HTTP Strict Transport Security) header
 
 Mappings:
   albIpTypeMapping:
@@ -114,9 +127,14 @@ Parameters:
       - WORKSPACES_GATEWAYS
     Default: CLOUDFRONT_ORIGIN_FACING
     ConstraintDescription: Enter a valid AWS service
-  allowNetworks:
+  allowedIPv4prefix:
     Type: String
+    AllowedPattern: "^\\d+\\.\\d+\\.\\d+\\.\\d+\\/\\d+$"
     Default: 0.0.0.0/0
+  allowedIPv6prefix:
+    Type: String
+    AllowedPattern: ".+"
+    Default: ::/0
 
   lambdaFunctionName:
     Type: String
@@ -173,6 +191,18 @@ Parameters:
       - ELBSecurityPolicy-FS-1-1-2019-08
       - ELBSecurityPolicy-2016-08
     Default: ELBSecurityPolicy-TLS13-1-2-2021-06
+  redirectHTTPtoHTTPS:
+    Type: String
+    AllowedValues:
+      - "Yes"
+      - "No"
+    Default: "No"
+  sendHSTSheader:
+    Type: String
+    AllowedValues:
+      - "Yes"
+      - "No"
+    Default: "Yes"
 
   albScheme:
     Type: String
@@ -193,7 +223,10 @@ Parameters:
     Type: List<AWS::EC2::Subnet::Id>
 
 Conditions:
-  useHttpsListener: !Not [!Equals [!Ref certificateArn, ""]]
+  createHttpsListener: !Not [!Equals [!Ref certificateArn, ""]]
+  createHttpListener: !Equals [!Ref redirectHTTPtoHTTPS, "No"]
+  createHttpRedirectListener: !Equals [!Ref redirectHTTPtoHTTPS, "Yes"]
+  sendHSTS: !Equals [!Ref sendHSTSheader, "Yes"]
 
 Resources:
   lambdaFunctionIamRole:
@@ -256,6 +289,7 @@ Resources:
       Environment:
         Variables:
           SERVICES: !Join [",", !Ref awsServices]
+          SEND_HSTS_HEADER: !If [sendHSTS, "true", "false"]
       Runtime: !Ref pythonRuntime
       Timeout: 25
       Architectures:
@@ -296,47 +330,95 @@ Resources:
             data = response.read()
             ipranges_json = json.loads(data)
             createDate = ipranges_json['createDate']
-            syncToken = ipranges_json['syncToken']            
+            syncToken = ipranges_json['syncToken']
+
+            # send HSTS header?
+            sendHSTSheader = os.getenv('SEND_HSTS_HEADER', 'false') == 'true' and event['headers']['x-forwarded-proto'] and event['headers']['x-forwarded-proto'] == 'https'
+            hstsValue = "max-age=31536000"
 
             url = event['path']
             if url.lower() == '/favicon.ico':
-              return {
-                'statusCode': 404,
-                'isBase64Encoded': False,
-                'body': 'Not Found!',
-                "headers": {
-                    "content-type": "text/html"
+              if sendHSTSheader:
+                return {
+                  'statusCode': 404,
+                  'isBase64Encoded': False,
+                  'body': 'Not Found!',
+                  "headers": {
+                      "Strict-Transport-Security": hstsValue,
+                      "content-type": "text/html"
+                    }
+                  }
+              else:
+                return {
+                  'statusCode': 404,
+                  'isBase64Encoded': False,
+                  'body': 'Not Found!',
+                  "headers": {
+                      "content-type": "text/html"
+                    }
+                  }
+            elif url.lower() == '/robots.txt':
+              if sendHSTSheader:
+                return {
+                  'statusCode': 200,
+                  'body' : 'User-agent: *\nDisallow: /',
+                  'statusDescription': '200 OK',
+                  'isBase64Encoded': False,
+                  "headers": {
+                    "Strict-Transport-Security": hstsValue,
+                    "content-type": "text/plain"
                   }
                 }
-            elif url.lower() == '/robots.txt':
-              return {
-                'statusCode': 200,
-                'body' : 'User-agent: *\nDisallow: /',
-                'statusDescription': '200 OK',
-                'isBase64Encoded': False,
-                "headers": {
-                   "content-type": "text/plain"
+              else:
+                return {
+                  'statusCode': 200,
+                  'body' : 'User-agent: *\nDisallow: /',
+                  'statusDescription': '200 OK',
+                  'isBase64Encoded': False,
+                  "headers": {
+                    "content-type": "text/plain"
+                  }
                 }
-              }
             elif url.lower() == '/createdate':
-              return {
-                'statusCode': 200,
-                'isBase64Encoded': False,
-                'body' : createDate,
-                "headers": {
-                   "content-type": "text/plain"
+              if sendHSTSheader:
+                return {
+                  'statusCode': 200,
+                  'isBase64Encoded': False,
+                  'body' : createDate,
+                  "headers": {
+                    "Strict-Transport-Security": hstsValue,
+                    "content-type": "text/plain"
+                  }
                 }
-              }
+              else:
+                return {
+                  'statusCode': 200,
+                  'isBase64Encoded': False,
+                  'body' : createDate,
+                  "headers": {
+                    "content-type": "text/plain"
+                  }
+                }
             elif url.lower() == '/synctoken':
-              return {
-                'statusCode': 200,
-                'isBase64Encoded': False,
-                'body' : syncToken,
-                "headers": {
-                   "content-type": "text/plain"
+              if sendHSTSheader:
+                return {
+                  'statusCode': 200,
+                  'isBase64Encoded': False,
+                  'body' : syncToken,
+                  "headers": {
+                    "Strict-Transport-Security": hstsValue,
+                    "content-type": "text/plain"
+                  }
                 }
-              }
-
+              else:
+                return {
+                  'statusCode': 200,
+                  'isBase64Encoded': False,
+                  'body' : syncToken,
+                  "headers": {
+                    "content-type": "text/plain"
+                  }
+                }
             # available aws services/regions/network_border_groups
             all_aws_services = list()
             all_aws_regions = list()
@@ -370,16 +452,29 @@ Resources:
                 responseBody = list()
                 responseBody.append("Enter a IP address to query")
               if responseBody != '':
-                return {
-                  'statusCode': 200,
-                  'body': '\n'.join(sorted(responseBody)),
-                  "headers": {
-                    "content-type": "text/plain",
-                    "path" : url,
-                    "syncToken": ipranges_json['syncToken'],
-                    "createDate": ipranges_json['createDate']
-                    }
-                }
+                if sendHSTSheader:
+                  return {
+                    'statusCode': 200,
+                    'body': '\n'.join(sorted(responseBody)),
+                    "headers": {
+                      "Strict-Transport-Security": hstsValue,
+                      "content-type": "text/plain",
+                      "path" : url,
+                      "syncToken": ipranges_json['syncToken'],
+                      "createDate": ipranges_json['createDate']
+                      }
+                  }
+                else:
+                  return {
+                    'statusCode': 200,
+                    'body': '\n'.join(sorted(responseBody)),
+                    "headers": {
+                      "content-type": "text/plain",
+                      "path" : url,
+                      "syncToken": ipranges_json['syncToken'],
+                      "createDate": ipranges_json['createDate']
+                      }
+                  }
             elif len(args) >= 3:
               # /SERVICE/<SERVICE>/<REGION>
               if args[1].upper()=='SERVICE' and args[2] in all_aws_services:
@@ -410,33 +505,65 @@ Resources:
                       aws_ranges.append(i['ipv6_prefix'] + "," + i['region'] + "," + i["service"] + "," + i["network_border_group"])
                 if len(aws_ranges) > 0:
                   aws_ranges.insert(0, 'ip_prefix,region,service,network_border_group')
+                  if sendHSTSheader:
+                    return {
+                      'statusCode': 200,
+                      'body': '\n'.join(aws_ranges),
+                      "headers": {
+                        "Strict-Transport-Security": hstsValue,
+                        "content-type": "text/plain",
+                        "path" : url,
+                        "syncToken": ipranges_json['syncToken'],
+                        "createDate": ipranges_json['createDate']
+                      }
+                    }
+                  else:
+                    return {
+                      'statusCode': 200,
+                      'body': '\n'.join(aws_ranges),
+                      "headers": {
+                        "content-type": "text/plain",
+                        "path" : url,
+                        "syncToken": ipranges_json['syncToken'],
+                        "createDate": ipranges_json['createDate']
+                      }
+                    }
+                else:
+                  if sendHSTSheader:
+                    return {
+                      'statusCode': 404,
+                      'body': 'Not AWS IP address',
+                      "headers": {
+                        "Strict-Transport-Security": hstsValue,
+                        "content-type": "text/html"
+                      }
+                    }
+                  else:
+                    return {
+                      'statusCode': 404,
+                      'body': 'Not AWS IP address',
+                      "headers": {
+                        "content-type": "text/html"
+                      }
+                    }
+              else:
+                if sendHSTSheader:
                   return {
-                    'statusCode': 200,
-                    'body': '\n'.join(aws_ranges),
+                    'statusCode': 404,
+                    'body': 'Not Found!',
                     "headers": {
-                      "content-type": "text/plain",
-                      "path" : url,
-                      "syncToken": ipranges_json['syncToken'],
-                      "createDate": ipranges_json['createDate']
+                      "Strict-Transport-Security": hstsValue,
+                      "content-type": "text/html"
                     }
                   }
                 else:
                   return {
                     'statusCode': 404,
-                    'body': 'Not AWS IP address',
+                    'body': 'Not Found!',
                     "headers": {
                       "content-type": "text/html"
                     }
                   }
-              else:
-                return {
-                  'statusCode': 404,
-                  'body': 'Not Found!',
-                  "headers": {
-                    "content-type": "text/html"
-                  }
-                }
-
             # IPv4 / IPv6 only? :
             ipv4_only = url.upper().endswith('/IPV4.TXT')
             ipv6_only = url.upper().endswith('/IPV6.TXT')              
@@ -477,20 +604,37 @@ Resources:
             sourceIp = event['headers']['x-forwarded-for']
 
             print(f'Source IP:{sourceIp}, Path:{url}, IPv4 Prefixes:{len(ipv4_prefixes)}, IPv6 Prefixes:{len(ipv6_prefixes)}, createDate:{createDate}, syncToken:{syncToken}')
-            return {
-              'statusCode': 200,
-              'isBase64Encoded': False,
-              'body': prefixes,
-              "headers": {
-                "content-type": "text/plain",
-                "aws-service" : ','.join(sorted(aws_service)),
-                "aws-region" : ','.join(sorted(aws_region)),
-                "aws-network" : ','.join(sorted(aws_network)),
-                "path" : url,
-                "syncToken": syncToken,
-                "createDate": createDate
+            if sendHSTSheader:
+              return {
+                'statusCode': 200,
+                'isBase64Encoded': False,
+                'body': prefixes,
+                "headers": {
+                  "Strict-Transport-Security": hstsValue,
+                  "content-type": "text/plain",
+                  "aws-service" : ','.join(sorted(aws_service)),
+                  "aws-region" : ','.join(sorted(aws_region)),
+                  "aws-network" : ','.join(sorted(aws_network)),
+                  "path" : url,
+                  "syncToken": syncToken,
+                  "createDate": createDate
+                  }
                 }
-              }
+            else:
+              return {
+                'statusCode': 200,
+                'isBase64Encoded': False,
+                'body': prefixes,
+                "headers": {
+                  "content-type": "text/plain",
+                  "aws-service" : ','.join(sorted(aws_service)),
+                  "aws-region" : ','.join(sorted(aws_region)),
+                  "aws-network" : ','.join(sorted(aws_network)),
+                  "path" : url,
+                  "syncToken": syncToken,
+                  "createDate": createDate
+                  }
+                }
       Tags:
         - Key: StackName
           Value: !Sub ${AWS::StackName}
@@ -531,14 +675,27 @@ Resources:
           IpProtocol: "tcp"
           FromPort: "80"
           ToPort: "80"
-          CidrIp: !Ref allowNetworks
+          CidrIp: !Ref allowedIPv4prefix
+        - Description: HTTP (IPv6)
+          IpProtocol: "tcp"
+          FromPort: "80"
+          ToPort: "80"
+          CidrIpv6: !Ref allowedIPv6prefix
         - !If
-          - useHttpsListener
+          - createHttpsListener
           - Description: HTTPS (IPv4)
             IpProtocol: tcp
             FromPort: 443
             ToPort: 443
-            CidrIp: !Ref allowNetworks
+            CidrIp: !Ref allowedIPv4prefix
+          - !Ref AWS::NoValue
+        - !If
+          - createHttpsListener
+          - Description: HTTPS (IPv6)
+            IpProtocol: tcp
+            FromPort: 443
+            ToPort: 443
+            CidrIpv6: !Ref allowedIPv6prefix
           - !Ref AWS::NoValue
       SecurityGroupEgress:
         - Description: HTTPS (IPv4)
@@ -556,6 +713,7 @@ Resources:
 
   httpListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
+    Condition: createHttpListener
     Properties:
       LoadBalancerArn: !Ref alb
       Port: 80
@@ -564,9 +722,26 @@ Resources:
         - Type: forward
           TargetGroupArn: !Ref targetGroup
 
+  httpRedirectListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Condition: createHttpRedirectListener
+    Properties:
+      LoadBalancerArn: !Ref alb
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: "redirect"
+          RedirectConfig:
+            Protocol: "HTTPS"
+            Port: 443
+            Host: "#{host}"
+            Path: "/#{path}"
+            Query: "#{query}"
+            StatusCode: "HTTP_301"
+
   httpsListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
-    Condition: useHttpsListener
+    Condition: createHttpsListener
     Properties:
       LoadBalancerArn: !Ref alb
       Port: 443

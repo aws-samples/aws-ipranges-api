@@ -55,7 +55,7 @@ Metadata:
       enableIPv6:
         default: Enable IPv6
       oacName:
-        default: Origin Access Control name
+        default: Unique OAC (Origin Access Control) name
       viewerProtocolPolicy:
         default: Communication policy between viewer and CloudFront
       cachePolicy:
@@ -141,7 +141,8 @@ Parameters:
     Default: "Yes"
   oacName:
     Type: String
-    Default: aws-ipranges-cloudfront
+    MaxLength: 64
+    Default: aws-ipranges-CloudFront
   viewerProtocolPolicy:
     Type: String
     AllowedValues:
@@ -155,6 +156,7 @@ Parameters:
       - CachingDisabled
       - CachingOptimized
       - CachingOptimizedForUncompressedObjects
+      - UseOriginCacheControlHeaders
     Default: CachingDisabled
   responseHeaderPolicy:
     Type: String

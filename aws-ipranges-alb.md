@@ -41,7 +41,7 @@ After stack has been successfully created, its status changes to **CREATE_COMPLE
 The following are available in `Outputs` section 
 - `albDnsName`: ALB domain name. Create a DNS CNAME or [Route 53 alias](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-choosing-alias-non-alias.html) to this value especially if you are using HTTPS listener
 - `albConsole`: ALB console URL
-- `lambdaFunctionLog`: CLoudWatch log URL for Lambda function
+- `lambdaFunctionLog`: CloudWatch log URL for Lambda function
 
 ## ALB Customisation
 Refer to [Application Load Balancer documentation](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/introduction.html) for customisation options. Some examples include

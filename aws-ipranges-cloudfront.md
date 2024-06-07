@@ -30,7 +30,7 @@ After stack has been successfully created, its status changes to **CREATE_COMPLE
 The following are available in `Outputs` section 
 - `cloudFrontURL`: CloudFront distribution domain name
 - `cloudFrontConsole`: CloudFront console URL
-- `lambdaFunctionLog`: CLoudWatch log URL for Lambda function
+- `lambdaFunctionLog`: CloudWatch log URL for Lambda function
 
 ## CloudFront Customisation
 Refer to [Amazon CloudFront documentation](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Introduction.html) for customisation options. Some examples include

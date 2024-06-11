@@ -51,6 +51,9 @@ Refer to [Application Load Balancer documentation](https://docs.aws.amazon.com/e
 - [Access logs for your Application Load Balancer](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-access-logs.html)
 - [Connection logs for your Application Load Balancer](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-connection-logs.html)
 
+## Clean Up
+The created resources can be removed by [deleting the CloudFormation stack](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-console-delete-stack.html). Go to [CloudFormation console](https://console.aws.amazon.com/cloudformation/), choose the stack you created and choose *Delete* 
+
 ## Security
 
 See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.

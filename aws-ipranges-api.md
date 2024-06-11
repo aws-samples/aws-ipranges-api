@@ -43,6 +43,10 @@ Refer to [Amazon API Gateway documentation](https://docs.aws.amazon.com/apigatew
 - [Configuring mutual TLS authentication](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-mutual-tls.html)
 - [Throttling requests to your HTTP API](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-throttling.html)
 
+
+## Clean Up
+The created resources can be removed by [deleting the CloudFormation stack](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-console-delete-stack.html). Go to [CloudFormation console](https://console.aws.amazon.com/cloudformation/), choose the stack you created and choose *Delete* 
+
 ## Security
 
 See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.

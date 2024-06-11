@@ -41,6 +41,9 @@ Refer to [Amazon CloudFront documentation](https://docs.aws.amazon.com/AmazonClo
 - [CloudFront and edge function logging](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/logging.html)
 
 
+## Clean Up
+The created resources can be removed by [deleting the CloudFormation stack](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-console-delete-stack.html). Go to [CloudFormation console](https://console.aws.amazon.com/cloudformation/), choose the stack you created and choose *Delete* 
+
 ## Security
 
 See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.

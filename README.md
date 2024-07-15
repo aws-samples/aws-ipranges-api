@@ -1,6 +1,6 @@
 ## AWS-IPRanges-API
 
-[Serverless](https://aws.amazon.com/serverless/) website that provides AWS IP prefixes as web feeds for use by firewalls and other applications. Allows IP address lookup of corresponding Region, service and network border group. 
+Solution providing AWS IP prefixes as web feeds for use by firewalls and other applications. Allows IP address lookup. 
 
 
 
@@ -11,7 +11,7 @@ A common use case is [Amazon CloudFront](https://aws.amazon.com/cloudfront/) wit
 
 Typically, the firewall administrator will extract out required IP prefixes from ip-ranges.json for use in firewall rules. The IP prefixes need to be updated whenever there are changes and users can subscribe to [AWS IP address ranges notifications](https://docs.aws.amazon.com/general/latest/gr/aws-ip-ranges.html#subscribe-notifications)
 
-This project makes IP prefixes available as web feeds for automatic updates by firewalls. Users have the option to filter IP prefixes by service, Region and network border group, and in combined IPv4 and IPv6, IPv4 only or IPv6 only format. Entire solution is serverless and can be deployed with a single CloudFormation template. 
+This project makes IP prefixes available as web feeds for automatic updates by firewalls. Users have the option to filter IP prefixes by service, Region and network border group, and in combined IPv4 and IPv6, IPv4 only or IPv6 only format. Entire solution is [serverless](https://aws.amazon.com/serverless/) and can be deployed with a single [CloudFormation](https://aws.amazon.com/cloudformation/) template. 
 
 Solution is mentioned in blog post [How to enhance CloudFront origin security of on-premise web servers using third-party firewalls](https://aws.amazon.com/blogs/networking-and-content-delivery/how-to-enhance-cloudfront-origin-security-of-on-premise-web-servers-using-third-party-firewalls/)
 
@@ -37,7 +37,7 @@ Firewalls that support external IP prefixes web feeds include (but not limited t
 - Palo Alto Networks: [External Dynamic List (IP Address)](https://docs.paloaltonetworks.com/pan-os/11-1/pan-os-admin/policy/use-an-external-dynamic-list-in-policy/configure-the-firewall-to-access-an-external-dynamic-list)
 - pfSense: [Aliases (URL Tables (IPs))](https://docs.netgate.com/pfsense/en/latest/firewall/aliases.html)
 
-Some firewalls have native support for AWS IP prefixes
+Some firewalls have limited native support for AWS IP prefixes
 - CheckPoint: [Updatable Objects](https://support.checkpoint.com/results/sk/sk131852)
 - Palo Alto Networks: [EDL Hosting Service](https://docs.paloaltonetworks.com/resources/edl-hosting-service)
 

@@ -13,11 +13,9 @@ CloudFront API
 Lambda
 - `pythonRuntime`: Python [runtime version](https://docs.aws.amazon.com/lambda/latest/dg/lambda-python.html). Default is `python3.12`
 - `cpuArchitecture`: [instruction set architecture](https://docs.aws.amazon.com/lambda/latest/dg/foundation-arch.html), either `x86_64` or `arm64`. Default is `arm64`
-- `lambdaFunctionName`: unique Lambda function name
 
 CloudFront
 - `enableIPv6`: enable or disable IPv6. Default is `yes`
-- `oacName`: unique [Origin Access Control (OAC)](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-restricting-access-to-lambda.html) name to use with Lambda function URL origin
 - `viewerProtocolPolicy`: configure viewer access policy for HTTP and HTTPS requests. Default is `redirect-to-https`
 - `cachePolicy`: [managed cache policy](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-cache-policies.html). Default is `CachingDisabled`
 - `responseHeaderPolicy`: [managed response headers policy](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-response-headers-policies.html). Default is `SecurityHeadersPolicy`
@@ -30,7 +28,7 @@ After stack has been successfully created, its status changes to **CREATE_COMPLE
 The following are available in `Outputs` section 
 - `cloudFrontURL`: CloudFront distribution domain name
 - `cloudFrontConsole`: CloudFront console URL
-- `lambdaFunctionLog`: CloudWatch log URL for Lambda function
+- `lambdaFunctionLog`: CLoudWatch log URL for Lambda function
 
 ## CloudFront Customisation
 Refer to [Amazon CloudFront documentation](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Introduction.html) for customisation options. Some examples include
@@ -40,9 +38,6 @@ Refer to [Amazon CloudFront documentation](https://docs.aws.amazon.com/AmazonClo
 - [Restricting the geographic distribution of your content](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/georestrictions.html)
 - [CloudFront and edge function logging](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/logging.html)
 
-
-## Clean Up
-The created resources can be removed by [deleting the CloudFormation stack](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-console-delete-stack.html). Go to [CloudFormation console](https://console.aws.amazon.com/cloudformation/), choose the stack you created and choose *Delete* 
 
 ## Security
 

@@ -31,12 +31,10 @@ Metadata:
         Parameters:
           - pythonRuntime
           - cpuArchitecture
-          - lambdaFunctionName
       - Label:
           default: CloudFront
         Parameters:
           - enableIPv6
-          - oacName
           - viewerProtocolPolicy
           - cachePolicy
           - responseHeaderPolicy
@@ -49,13 +47,9 @@ Metadata:
         default: Python 3 runtime version ( https://docs.aws.amazon.com/lambda/latest/dg/lambda-python.html )
       cpuArchitecture:
         default: Instruction set architecture ( https://docs.aws.amazon.com/lambda/latest/dg/foundation-arch.html )
-      lambdaFunctionName:
-        default: Unique Lambda function name
 
       enableIPv6:
         default: Enable IPv6
-      oacName:
-        default: Unique OAC (Origin Access Control) name
       viewerProtocolPolicy:
         default: Communication policy between viewer and CloudFront
       cachePolicy:
@@ -117,11 +111,6 @@ Parameters:
     Default: CLOUDFRONT_ORIGIN_FACING
     ConstraintDescription: Enter a valid AWS service
 
-  lambdaFunctionName:
-    Type: String
-    AllowedPattern: "[a-zA-Z0-9]+[a-zA-Z0-9-]+[a-zA-Z0-9]+"
-    ConstraintDescription: Enter a valid function name
-    Default: aws-ipranges-CloudFront
   pythonRuntime:
     Type: String
     AllowedPattern: "python3\\.\\d{1,2}"
@@ -140,10 +129,6 @@ Parameters:
       - "Yes"
       - "No"
     Default: "Yes"
-  oacName:
-    Type: String
-    MaxLength: 64
-    Default: aws-ipranges-CloudFront
   viewerProtocolPolicy:
     Type: String
     AllowedValues:
@@ -194,7 +179,16 @@ Resources:
                 Action:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
-                Resource: !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${lambdaFunctionName}:*
+                Resource: !Sub
+                  - "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${AWS::StackName}-lambdaFunction-${UID}:*"
+                  - UID:
+                      !Select [
+                        3,
+                        !Split [
+                          "-",
+                          !Select [2, !Split ["/", !Ref AWS::StackId]],
+                        ],
+                      ]
       Tags:
         - Key: StackName
           Value: !Sub ${AWS::StackName}
@@ -202,8 +196,6 @@ Resources:
           Value: !Sub ${AWS::StackId}
         - Key: GitHub
           Value: https://github.com/aws-samples/aws-ipranges-api
-        - Key: Description
-          Value: !Sub For Lambda function ${lambdaFunctionName}
 
   lambdaFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -212,7 +204,13 @@ Resources:
     Properties:
       KmsKeyId: !Ref AWS::NoValue
       RetentionInDays: !Ref AWS::NoValue
-      LogGroupName: !Sub /aws/lambda/${lambdaFunctionName}
+      LogGroupName: !Sub
+        - "/aws/lambda/${AWS::StackName}-lambdaFunction-${UID}"
+        - UID:
+            !Select [
+              3,
+              !Split ["-", !Select [2, !Split ["/", !Ref AWS::StackId]]],
+            ]
       Tags:
         - Key: StackName
           Value: !Sub ${AWS::StackName}
@@ -225,7 +223,13 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       Description: !Sub "[${AWS::StackName}] - Returns AWS IP prefixes for CloudFront"
-      FunctionName: !Ref lambdaFunctionName
+      FunctionName: !Sub
+        - "${AWS::StackName}-lambdaFunction-${UID}"
+        - UID:
+            !Select [
+              3,
+              !Split ["-", !Select [2, !Split ["/", !Ref AWS::StackId]]],
+            ]
       Handler: "index.lambda_handler"
       MemorySize: 1769
       ReservedConcurrentExecutions: !Ref AWS::NoValue
@@ -488,7 +492,13 @@ Resources:
   lambdaFunctionUrlPermission:
     Type: "AWS::Lambda::Permission"
     Properties:
-      FunctionName: !Ref lambdaFunction
+      FunctionName: !Sub
+        - "${AWS::StackName}-lambdaFunction-${UID}"
+        - UID:
+            !Select [
+              3,
+              !Split ["-", !Select [2, !Split ["/", !Ref AWS::StackId]]],
+            ]
       Action: "lambda:InvokeFunctionUrl"
       SourceArn: !Sub arn:${AWS::Partition}:cloudfront::${AWS::AccountId}:distribution/${cloudFrontDistribution.Id}
       Principal: "cloudfront.amazonaws.com"
@@ -497,9 +507,21 @@ Resources:
     Type: "AWS::CloudFront::OriginAccessControl"
     Properties:
       OriginAccessControlConfig:
-        Name: !Ref oacName
+        Name: !Sub
+          - "${AWS::StackName}-cloudFrontOriginAccessControl-${UID}"
+          - UID:
+              !Select [
+                3,
+                !Split ["-", !Select [2, !Split ["/", !Ref AWS::StackId]]],
+              ]
         SigningBehavior: "always"
-        Description: !Sub "OAC for ${lambdaFunctionName}"
+        Description: !Sub
+          - "OAC for ${AWS::StackName}-lambdaFunction-${UID}"
+          - UID:
+              !Select [
+                3,
+                !Split ["-", !Select [2, !Split ["/", !Ref AWS::StackId]]],
+              ]
         SigningProtocol: "sigv4"
         OriginAccessControlOriginType: "lambda"
 
@@ -515,10 +537,22 @@ Resources:
               OriginProtocolPolicy: "https-only"
             DomainName:
               !Select [2, !Split ["/", !GetAtt lambdaFunctionUrl.FunctionUrl]]
-            Id: !Ref lambdaFunctionName
+            Id: !Sub
+              - "${AWS::StackName}-lambdaFunction-${UID}"
+              - UID:
+                  !Select [
+                    3,
+                    !Split ["-", !Select [2, !Split ["/", !Ref AWS::StackId]]],
+                  ]
         DefaultCacheBehavior:
           Compress: true
-          TargetOriginId: !Ref lambdaFunctionName
+          TargetOriginId: !Sub
+            - "${AWS::StackName}-lambdaFunction-${UID}"
+            - UID:
+                !Select [
+                  3,
+                  !Split ["-", !Select [2, !Split ["/", !Ref AWS::StackId]]],
+                ]
           ViewerProtocolPolicy: !Ref viewerProtocolPolicy
           CachePolicyId:
             !FindInMap [cachePolicyMapping, !Ref cachePolicy, Value]
@@ -538,7 +572,13 @@ Resources:
         HttpVersion: "http2and3"
         Enabled: true
         IPV6Enabled: !If [hasIPv6, true, false]
-        Comment: !Sub "CloudFront distribution for ${lambdaFunctionName}"
+        Comment: !Sub
+          - "CloudFront distribution for ${AWS::StackName}-lambdaFunction-${UID}"
+          - UID:
+              !Select [
+                3,
+                !Split ["-", !Select [2, !Split ["/", !Ref AWS::StackId]]],
+              ]
       Tags:
         - Key: StackName
           Value: !Sub ${AWS::StackName}
@@ -556,4 +596,10 @@ Outputs:
 
   lambdaFunctionLog:
     Description: Cloudwatch log for Lambda function
-    Value: !Sub https://console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#logsV2:log-groups/log-group/$252Faws$252Flambda$252F${lambdaFunctionName}
+    Value: !Sub
+      - "https://console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#logsV2:log-groups/log-group/$252Faws$252Flambda$252F${AWS::StackName}-lambdaFunction-${UID}"
+      - UID:
+          !Select [
+            3,
+            !Split ["-", !Select [2, !Split ["/", !Ref AWS::StackId]]],
+          ]

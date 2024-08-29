@@ -32,8 +32,6 @@ Metadata:
         Parameters:
           - pythonRuntime
           - cpuArchitecture
-          - lambdaFunctionName
-          - lambdaAuthorizerFunctionName
       - Label:
           default: "[Optional] Custom domain name"
         Parameters:
@@ -51,10 +49,6 @@ Metadata:
         default: Python 3 runtime version ( https://docs.aws.amazon.com/lambda/latest/dg/lambda-python.html )
       cpuArchitecture:
         default: Instruction set architecture ( https://docs.aws.amazon.com/lambda/latest/dg/foundation-arch.html )
-      lambdaFunctionName:
-        default: Unique Lambda function name
-      lambdaAuthorizerFunctionName:
-        default: Unique Lambda authorizer function name
 
       customDomainName:
         default: "Custom domain name to use (e.g. api.example.com)"
@@ -97,17 +91,6 @@ Parameters:
     Type: String
     Default: 0.0.0.0/0
 
-  lambdaFunctionName:
-    Type: String
-    AllowedPattern: "[a-zA-Z0-9]+[a-zA-Z0-9-]+[a-zA-Z0-9]+"
-    ConstraintDescription: Enter a valid function name
-    MaxLength: 64
-    Default: aws-ipranges-API
-  lambdaAuthorizerFunctionName:
-    Type: String
-    AllowedPattern: "[a-zA-Z0-9]+[a-zA-Z0-9-]+[a-zA-Z0-9]+"
-    ConstraintDescription: Enter a valid function name
-    Default: aws-ipranges-API-authorizer
   pythonRuntime:
     Type: String
     AllowedPattern: "python3\\.\\d{1,2}"
@@ -163,16 +146,23 @@ Resources:
                 Action:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
-                Resource: !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${lambdaFunctionName}:*
+                Resource: !Sub
+                  - "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${AWS::StackName}-lambdaFunction-${UID}:*"
+                  - UID:
+                      !Select [
+                        3,
+                        !Split [
+                          "-",
+                          !Select [2, !Split ["/", !Ref AWS::StackId]],
+                        ],
+                      ]
       Tags:
         - Key: StackName
-          Value: !Sub ${AWS::StackName}
+          Value: !Ref AWS::StackName
         - Key: StackId
-          Value: !Sub ${AWS::StackId}
+          Value: !Ref AWS::StackId
         - Key: GitHub
           Value: https://github.com/aws-samples/aws-ipranges-api
-        - Key: Description
-          Value: !Sub For Lambda function ${lambdaFunctionName}
 
   lambdaFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -181,12 +171,18 @@ Resources:
     Properties:
       KmsKeyId: !Ref AWS::NoValue
       RetentionInDays: !Ref AWS::NoValue
-      LogGroupName: !Sub /aws/lambda/${lambdaFunctionName}
+      LogGroupName: !Sub
+        - "/aws/lambda/${AWS::StackName}-lambdaFunction-${UID}"
+        - UID:
+            !Select [
+              3,
+              !Split ["-", !Select [2, !Split ["/", !Ref AWS::StackId]]],
+            ]
       Tags:
         - Key: StackName
-          Value: !Sub ${AWS::StackName}
+          Value: !Ref AWS::StackName
         - Key: StackId
-          Value: !Sub ${AWS::StackId}
+          Value: !Ref AWS::StackId
         - Key: GitHub
           Value: https://github.com/aws-samples/aws-ipranges-api
 
@@ -194,7 +190,13 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       Description: !Sub "[${AWS::StackName}] - Returns AWS IP prefixes for API Gateway"
-      FunctionName: !Ref lambdaFunctionName
+      FunctionName: !Sub
+        - "${AWS::StackName}-lambdaFunction-${UID}"
+        - UID:
+            !Select [
+              3,
+              !Split ["-", !Select [2, !Split ["/", !Ref AWS::StackId]]],
+            ]
       Handler: "index.lambda_handler"
       MemorySize: 1769
       ReservedConcurrentExecutions: !Ref AWS::NoValue
@@ -443,9 +445,9 @@ Resources:
               }
       Tags:
         - Key: StackName
-          Value: !Sub ${AWS::StackName}
+          Value: !Ref AWS::StackName
         - Key: StackId
-          Value: !Sub ${AWS::StackId}
+          Value: !Ref AWS::StackId
         - Key: GitHub
           Value: https://github.com/aws-samples/aws-ipranges-api
         - Key: Description
@@ -478,16 +480,31 @@ Resources:
                 Action:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
-                Resource: !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${lambdaAuthorizerFunctionName}:*
+                Resource: !Sub
+                  - "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${AWS::StackName}-lambdaAuthorizerFunction-${UID}:*"
+                  - UID:
+                      !Select [
+                        3,
+                        !Split [
+                          "-",
+                          !Select [2, !Split ["/", !Ref AWS::StackId]],
+                        ],
+                      ]
       Tags:
         - Key: StackName
-          Value: !Sub ${AWS::StackName}
+          Value: !Ref AWS::StackName
         - Key: StackId
-          Value: !Sub ${AWS::StackId}
+          Value: !Ref AWS::StackId
         - Key: GitHub
           Value: https://github.com/aws-samples/aws-ipranges-api
         - Key: Description
-          Value: !Sub For lambda function ${lambdaAuthorizerFunctionName}
+          Value: !Sub
+            - "For lambda function ${AWS::StackName}-lambdaAuthorizerFunction-${UID}"
+            - UID:
+                !Select [
+                  3,
+                  !Split ["-", !Select [2, !Split ["/", !Ref AWS::StackId]]],
+                ]
 
   lambdaAuthorizerFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -496,12 +513,18 @@ Resources:
     Properties:
       KmsKeyId: !Ref AWS::NoValue
       RetentionInDays: !Ref AWS::NoValue
-      LogGroupName: !Sub /aws/lambda/${lambdaAuthorizerFunction}
+      LogGroupName: !Sub
+        - "/aws/lambda/${AWS::StackName}-lambdaAuthorizerFunction-${UID}"
+        - UID:
+            !Select [
+              3,
+              !Split ["-", !Select [2, !Split ["/", !Ref AWS::StackId]]],
+            ]
       Tags:
         - Key: StackName
-          Value: !Sub ${AWS::StackName}
+          Value: !Ref AWS::StackName
         - Key: StackId
-          Value: !Sub ${AWS::StackId}
+          Value: !Ref AWS::StackId
         - Key: GitHub
           Value: https://github.com/aws-samples/aws-ipranges-api
 
@@ -509,7 +532,13 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       Description: !Sub "[${AWS::StackName}] - Lambda Authorizer for API Gateway"
-      FunctionName: !Ref lambdaAuthorizerFunctionName
+      FunctionName: !Sub
+        - "${AWS::StackName}-lambdaAuthorizerFunction-${UID}"
+        - UID:
+            !Select [
+              3,
+              !Split ["-", !Select [2, !Split ["/", !Ref AWS::StackId]]],
+            ]
       Handler: "index.lambda_handler"
       MemorySize: 128
       ReservedConcurrentExecutions: !Ref AWS::NoValue
@@ -553,13 +582,11 @@ Resources:
             }
       Tags:
         - Key: StackName
-          Value: !Sub ${AWS::StackName}
+          Value: !Ref AWS::StackName
         - Key: StackId
-          Value: !Sub ${AWS::StackId}
+          Value: !Ref AWS::StackId
         - Key: GitHub
           Value: https://github.com/aws-samples/aws-ipranges-api
-        - Key: Description
-          Value: !Sub Authorizer for ${AWS::StackName}-apiGateway
 
   lambdaAuthorizerVersion:
     Type: AWS::Lambda::Version
@@ -570,13 +597,19 @@ Resources:
   apiGateway:
     Type: AWS::ApiGatewayV2::Api
     Properties:
-      Name: !Sub "${AWS::StackName}-api"
+      Name: !Sub
+        - "${AWS::StackName}-apiGateway-${UID}"
+        - UID:
+            !Select [
+              3,
+              !Split ["-", !Select [2, !Split ["/", !Ref AWS::StackId]]],
+            ]
       Description: !Sub "[${AWS::StackName}] - returns AWS IP prefixes from ip-ranges.json"
       ProtocolType: HTTP
       DisableExecuteApiEndpoint: !If [enableDefaultEndPoint, false, true]
       Tags:
-        StackName: !Sub ${AWS::StackName}
-        StackId: !Sub ${AWS::StackId}
+        StackName: !Ref AWS::StackName
+        StackId: !Ref AWS::StackId
         GitHub: "https://github.com/aws-samples/aws-ipranges-api"
 
   apiRoute:
@@ -609,9 +642,9 @@ Resources:
       LogGroupName: !Sub /${AWS::StackName}/apiLog
       Tags:
         - Key: StackName
-          Value: !Sub ${AWS::StackName}
+          Value: !Ref AWS::StackName
         - Key: StackId
-          Value: !Sub ${AWS::StackId}
+          Value: !Ref AWS::StackId
         - Key: GitHub
           Value: "https://github.com/aws-samples/aws-ipranges-api"
 
@@ -637,8 +670,8 @@ Resources:
         DestinationArn: !GetAtt apiLogGroup.Arn
         Format: "$context.identity.sourceIp,$context.path,$context.requestTime,$context.httpMethod,$context.routeKey,$context.protocol,$context.status,$context.responseLength,$context.requestId"
       Tags:
-        StackName: !Sub ${AWS::StackName}
-        StackId: !Sub ${AWS::StackId}
+        StackName: !Ref AWS::StackName
+        StackId: !Ref AWS::StackId
         GitHub: "https://github.com/aws-samples/aws-ipranges-api"
 
   apiAuthorizer:
@@ -652,7 +685,13 @@ Resources:
         - $context.identity.sourceIp
       AuthorizerUri: !Sub arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaAuthorizerFunction.Arn}/invocations
       EnableSimpleResponses: True
-      Name: !Sub ${AWS::StackName}-authorizer
+      Name: !Sub
+        - "${AWS::StackName}-apiAuthorizer-${UID}"
+        - UID:
+            !Select [
+              3,
+              !Split ["-", !Select [2, !Split ["/", !Ref AWS::StackId]]],
+            ]
 
   apiTriggerAuthorizerPermission:
     Type: "AWS::Lambda::Permission"
@@ -680,8 +719,8 @@ Resources:
           EndpointType: REGIONAL
           SecurityPolicy: TLS_1_2
       Tags:
-        StackName: !Sub ${AWS::StackName}
-        StackId: !Sub ${AWS::StackId}
+        StackName: !Ref AWS::StackName
+        StackId: !Ref AWS::StackId
         GitHub: "https://github.com/aws-samples/aws-ipranges-api"
         Description: !Sub "Custom domain name for ${apiGateway}"
 
@@ -722,7 +761,20 @@ Outputs:
 
   lambdaFunctionLog:
     Description: Cloudwatch log for Lambda function
-    Value: !Sub https://console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#logsV2:log-groups/log-group/$252Faws$252Flambda$252F${lambdaFunctionName}
+    Value: !Sub
+      - "https://console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#logsV2:log-groups/log-group/$252Faws$252Flambda$252F${AWS::StackName}-lambdaFunction-${UID}"
+      - UID:
+          !Select [
+            3,
+            !Split ["-", !Select [2, !Split ["/", !Ref AWS::StackId]]],
+          ]
+
   lambdaAuthorizerFunctionLog:
     Description: Cloudwatch log for Lambda authorizer function
-    Value: !Sub https://console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#logsV2:log-groups/log-group/$252Faws$252Flambda$252F${lambdaAuthorizerFunctionName}
+    Value: !Sub
+      - "https://console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#logsV2:log-groups/log-group/$252Faws$252Flambda$252F${AWS::StackName}-lambdaAuthorizerFunction-${UID}"
+      - UID:
+          !Select [
+            3,
+            !Split ["-", !Select [2, !Split ["/", !Ref AWS::StackId]]],
+          ]

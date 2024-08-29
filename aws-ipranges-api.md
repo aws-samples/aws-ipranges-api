@@ -13,10 +13,9 @@ HTTP API
 Lambda
 - `pythonRuntime`: Python [runtime version](https://docs.aws.amazon.com/lambda/latest/dg/lambda-python.html). Default is `python3.12`
 - `cpuArchitecture`: [instruction set architecture](https://docs.aws.amazon.com/lambda/latest/dg/foundation-arch.html), either `x86_64` or `arm64`. Default is `arm64`
-- `lambdaFunctionName`: unique Lambda function name
-- `lambdaAuthorizerFunctionName`: unique Lambda authorizer function name
 
-[Optional] Custom domain name
+
+Custom domain name (optional)
 
 This section is optional
 - `customDomainName`: [custom domain name](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-custom-domain-names.html)
@@ -33,7 +32,7 @@ The following are available in `Outputs` section
 - `apiFQDN` (if `customDomainName` is specified): Create a DNS CNAME or [Route 53 alias](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-choosing-alias-non-alias.html) record of your `customDomainName` to this value
 
 - `apiGatewayLog`: CloudWatch log URL for API Gateway
-- `lambdaFunctionLog`: CloudWatch log URL for Lambda function
+- `lambdaFunctionLog`: CLoudWatch log URL for Lambda function
 - `lambdaAuthorizerFunctionLog`: CloudWatch log URL for Lambda authorizer function
 
 
@@ -42,10 +41,6 @@ Refer to [Amazon API Gateway documentation](https://docs.aws.amazon.com/apigatew
 - [Routing traffic to an Amazon API Gateway API by using your domain name](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-to-api-gateway.html)
 - [Configuring mutual TLS authentication](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-mutual-tls.html)
 - [Throttling requests to your HTTP API](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-throttling.html)
-
-
-## Clean Up
-The created resources can be removed by [deleting the CloudFormation stack](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-console-delete-stack.html). Go to [CloudFormation console](https://console.aws.amazon.com/cloudformation/), choose the stack you created and choose *Delete* 
 
 ## Security
 

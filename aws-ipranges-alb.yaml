@@ -33,12 +33,10 @@ Metadata:
         Parameters:
           - pythonRuntime
           - cpuArchitecture
-          - lambdaFunctionName
       - Label:
           default: Load Balancer
         Parameters:
           - albScheme
-          - targetGroupName
       - Label:
           default: Networking
         Parameters:
@@ -65,13 +63,9 @@ Metadata:
         default: Python 3 runtime version ( https://docs.aws.amazon.com/lambda/latest/dg/lambda-python.html )
       cpuArchitecture:
         default: Instruction set architecture ( https://docs.aws.amazon.com/lambda/latest/dg/foundation-arch.html )
-      lambdaFunctionName:
-        default: Unique Lambda function name
 
       albScheme:
         default: Load balancer scheme (internal or internet facing)
-      targetGroupName:
-        default: Unique target group name
 
       ipAddressType:
         default: IPv4 only, IPv6 only or dual stack (IPv4-and-IPv6)
@@ -137,12 +131,6 @@ Parameters:
     AllowedPattern: ".+"
     Default: ::/0
 
-  lambdaFunctionName:
-    Type: String
-    AllowedPattern: "[a-zA-Z0-9]+[a-zA-Z0-9-]+[a-zA-Z0-9]+"
-    ConstraintDescription: Enter a valid function name
-    MaxLength: 64
-    Default: aws-ipranges-ALB
   pythonRuntime:
     Type: String
     AllowedPattern: "python3\\.\\d{1,2}"
@@ -154,11 +142,6 @@ Parameters:
       - x86_64
       - arm64
     Default: arm64
-
-  targetGroupName:
-    Type: String
-    MaxLength: 32
-    Default: aws-ipranges-ALB
 
   certificateArn:
     Type: String
@@ -225,9 +208,25 @@ Parameters:
 
 Conditions:
   createHttpsListener: !Not [!Equals [!Ref certificateArn, ""]]
+  createIPv4HttpsListener:
+    !And [!Condition createHttpsListener, !Condition allowIPv4]
+  createIPv6HttpsListener:
+    !And [!Condition createHttpsListener, !Condition allowIPv6]
+
   createHttpListener: !Equals [!Ref redirectHTTPtoHTTPS, "No"]
+
   createHttpRedirectListener: !Equals [!Ref redirectHTTPtoHTTPS, "Yes"]
   sendHSTS: !Equals [!Ref sendHSTSheader, "Yes"]
+  allowIPv4:
+    !Or [
+      !Equals [!Ref ipAddressType, "IPv4"],
+      !Equals [!Ref ipAddressType, "IPv4-and-IPv6"],
+    ]
+  allowIPv6:
+    !Or [
+      !Equals [!Ref ipAddressType, "IPv6"],
+      !Equals [!Ref ipAddressType, "IPv4-and-IPv6"],
+    ]
 
 Resources:
   lambdaFunctionIamRole:
@@ -251,16 +250,23 @@ Resources:
                 Action:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
-                Resource: !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${lambdaFunctionName}:*
+                Resource: !Sub
+                  - "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${AWS::StackName}-lambdaFunction-${UID}:*"
+                  - UID:
+                      !Select [
+                        3,
+                        !Split [
+                          "-",
+                          !Select [2, !Split ["/", !Ref AWS::StackId]],
+                        ],
+                      ]
       Tags:
         - Key: StackName
-          Value: !Sub ${AWS::StackName}
+          Value: !Ref AWS::StackName
         - Key: StackId
-          Value: !Sub ${AWS::StackId}
+          Value: !Ref AWS::StackId
         - Key: GitHub
           Value: https://github.com/aws-samples/aws-ipranges-api
-        - Key: Description
-          Value: !Sub For Lambda function ${lambdaFunctionName}
 
   lambdaFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -269,12 +275,18 @@ Resources:
     Properties:
       KmsKeyId: !Ref AWS::NoValue
       RetentionInDays: !Ref AWS::NoValue
-      LogGroupName: !Sub /aws/lambda/${lambdaFunctionName}
+      LogGroupName: !Sub
+        - "/aws/lambda/${AWS::StackName}-lambdaFunction-${UID}"
+        - UID:
+            !Select [
+              3,
+              !Split ["-", !Select [2, !Split ["/", !Ref AWS::StackId]]],
+            ]
       Tags:
         - Key: StackName
-          Value: !Sub ${AWS::StackName}
+          Value: !Ref AWS::StackName
         - Key: StackId
-          Value: !Sub ${AWS::StackId}
+          Value: !Ref AWS::StackId
         - Key: GitHub
           Value: https://github.com/aws-samples/aws-ipranges-api
 
@@ -282,7 +294,13 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       Description: !Sub "[${AWS::StackName}] - Returns AWS IP prefixes for ALB"
-      FunctionName: !Ref lambdaFunctionName
+      FunctionName: !Sub
+        - "${AWS::StackName}-lambdaFunction-${UID}"
+        - UID:
+            !Select [
+              3,
+              !Split ["-", !Select [2, !Split ["/", !Ref AWS::StackId]]],
+            ]
       Handler: "index.lambda_handler"
       MemorySize: 1769
       ReservedConcurrentExecutions: !Ref AWS::NoValue
@@ -638,9 +656,9 @@ Resources:
                 }
       Tags:
         - Key: StackName
-          Value: !Sub ${AWS::StackName}
+          Value: !Ref AWS::StackName
         - Key: StackId
-          Value: !Sub ${AWS::StackId}
+          Value: !Ref AWS::StackId
         - Key: GitHub
           Value: https://github.com/aws-samples/aws-ipranges-api
         - Key: Description
@@ -662,9 +680,9 @@ Resources:
       Subnets: !Ref subnets
       Tags:
         - Key: StackName
-          Value: !Sub ${AWS::StackName}
+          Value: !Ref AWS::StackName
         - Key: StackId
-          Value: !Sub ${AWS::StackId}
+          Value: !Ref AWS::StackId
 
   securityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -672,18 +690,24 @@ Resources:
       GroupDescription: Allow inbound to ALB
       VpcId: !Ref vpc
       SecurityGroupIngress:
-        - Description: HTTP (IPv4)
-          IpProtocol: "tcp"
-          FromPort: "80"
-          ToPort: "80"
-          CidrIp: !Ref allowedIPv4prefix
-        - Description: HTTP (IPv6)
-          IpProtocol: "tcp"
-          FromPort: "80"
-          ToPort: "80"
-          CidrIpv6: !Ref allowedIPv6prefix
         - !If
-          - createHttpsListener
+          - allowIPv4
+          - Description: HTTP (IPv4)
+            IpProtocol: "tcp"
+            FromPort: "80"
+            ToPort: "80"
+            CidrIp: !Ref allowedIPv4prefix
+          - !Ref AWS::NoValue
+        - !If
+          - allowIPv6
+          - Description: HTTP (IPv6)
+            IpProtocol: "tcp"
+            FromPort: "80"
+            ToPort: "80"
+            CidrIpv6: !Ref allowedIPv6prefix
+          - !Ref AWS::NoValue
+        - !If
+          - createIPv4HttpsListener
           - Description: HTTPS (IPv4)
             IpProtocol: tcp
             FromPort: 443
@@ -691,7 +715,7 @@ Resources:
             CidrIp: !Ref allowedIPv4prefix
           - !Ref AWS::NoValue
         - !If
-          - createHttpsListener
+          - createIPv6HttpsListener
           - Description: HTTPS (IPv6)
             IpProtocol: tcp
             FromPort: 443
@@ -699,18 +723,35 @@ Resources:
             CidrIpv6: !Ref allowedIPv6prefix
           - !Ref AWS::NoValue
       SecurityGroupEgress:
-        - Description: HTTPS (IPv4)
-          IpProtocol: tcp
-          FromPort: 443
-          ToPort: 443
-          CidrIp: 0.0.0.0/0
+        - !If
+          - allowIPv4
+          - Description: Ping
+            IpProtocol: icmp
+            FromPort: -1
+            ToPort: -1
+            CidrIp: !Ref allowedIPv4prefix
+          - !Ref AWS::NoValue
+        - !If
+          - allowIPv6
+          - Description: Ping
+            IpProtocol: icmp
+            FromPort: -1
+            ToPort: -1
+            CidrIpv6: !Ref allowedIPv6prefix
+          - !Ref AWS::NoValue
       Tags:
         - Key: StackName
-          Value: !Sub ${AWS::StackName}
+          Value: !Ref AWS::StackName
         - Key: StackId
-          Value: !Sub ${AWS::StackId}
+          Value: !Ref AWS::StackId
         - Key: Name
-          Value: !Sub "[${AWS::StackName}] - alb"
+          Value: !Sub
+            - "${AWS::StackName}-securityGroup-${UID}"
+            - UID:
+                !Select [
+                  3,
+                  !Split ["-", !Select [2, !Split ["/", !Ref AWS::StackId]]],
+                ]
 
   httpListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
@@ -760,21 +801,33 @@ Resources:
       FunctionName: !GetAtt lambdaFunction.Arn
       Action: "lambda:InvokeFunction"
       Principal: elasticloadbalancing.amazonaws.com
-      SourceArn: !Sub arn:${AWS::Partition}:elasticloadbalancing:${AWS::Region}:${AWS::AccountId}:targetgroup/${targetGroupName}/*
+      SourceArn: !Sub
+        - "arn:${AWS::Partition}:elasticloadbalancing:${AWS::Region}:${AWS::AccountId}:targetgroup/${AWS::StackName}-${UID}/*"
+        - UID:
+            !Select [
+              3,
+              !Split ["-", !Select [2, !Split ["/", !Ref AWS::StackId]]],
+            ]
 
   targetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      Name: !Ref targetGroupName
+      Name: !Sub
+        - "${AWS::StackName}-${UID}"
+        - UID:
+            !Select [
+              3,
+              !Split ["-", !Select [2, !Split ["/", !Ref AWS::StackId]]],
+            ]
       HealthCheckEnabled: false
       TargetType: lambda
       Targets:
         - Id: !GetAtt lambdaFunction.Arn
       Tags:
         - Key: StackName
-          Value: !Sub ${AWS::StackName}
+          Value: !Ref AWS::StackName
         - Key: StackId
-          Value: !Sub ${AWS::StackId}
+          Value: !Ref AWS::StackId
 
 Outputs:
   albDnsName:
@@ -787,4 +840,10 @@ Outputs:
 
   lambdaFunctionLog:
     Description: Cloudwatch log for Lambda function
-    Value: !Sub https://console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#logsV2:log-groups/log-group/$252Faws$252Flambda$252F${lambdaFunctionName}
+    Value: !Sub
+      - "https://console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#logsV2:log-groups/log-group/$252Faws$252Flambda$252F${AWS::StackName}-lambdaFunction-${UID}"
+      - UID:
+          !Select [
+            3,
+            !Split ["-", !Select [2, !Split ["/", !Ref AWS::StackId]]],
+          ]

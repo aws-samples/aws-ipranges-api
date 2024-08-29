@@ -63,6 +63,11 @@ Use different URLs to return IP prefixes and other values:
 
 For IP prefixes, you can append `/ipv4.txt` or `/ipv6.txt` to filter by IPv4 or IPv6 respectively, e.g. `/SERVICE/ROUTE53_HEALTHCHECKS/ipv4.txt`
 
+### Demo
+<img width="1340" alt="image" src="aws-ipranges-api.gif">
+
+
+
 ## Security
 
 See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.

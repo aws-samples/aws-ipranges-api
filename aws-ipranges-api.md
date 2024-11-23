@@ -1,5 +1,7 @@
 ## Amazon API Gateway (aws-ipranges-api)
 
+*This template use [HTTP APIs](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api.html) which may not be available in your Region.*
+
 ## Deployment via CloudFormation console
 Download [`aws-ipranges-api.yaml`](aws-ipranges-api.yaml) file and login to AWS [CloudFormation console](https://console.aws.amazon.com/cloudformation/home#/stacks/create/template). Choose **Create Stack**, **Upload a template file**, **Choose File**, select `aws-ipranges-api.yaml` and choose **Next**.
 

@@ -11,7 +11,7 @@ CloudFront API
 - `awsServices`: names of AWS service to return by root URL separated by commas. Default is `CLOUDFRONT_ORIGIN_FACING`
 
 Lambda
-- `pythonRuntime`: Python [runtime version](https://docs.aws.amazon.com/lambda/latest/dg/lambda-python.html). Default is `python3.12`
+- `pythonRuntime`: Python [runtime version](https://docs.aws.amazon.com/lambda/latest/dg/lambda-python.html). Default is `python3.13`
 - `cpuArchitecture`: [instruction set architecture](https://docs.aws.amazon.com/lambda/latest/dg/foundation-arch.html), either `x86_64` or `arm64`. Default is `arm64`
 
 CloudFront

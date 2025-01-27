@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: ALB website that returns AWS IP prefixes from ip-ranges.json ( https://github.com/aws-samples/aws-ipranges-api )
+Description: ALB website that returns AWS IP prefixes ( https://github.com/aws-samples/aws-ipranges-api ) (uksb-shhz98vv80) (tag:alb)
 
 Metadata:
   License:

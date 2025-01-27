@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: CloudFront website that returns AWS IP prefixes from ip-ranges.json ( https://github.com/aws-samples/aws-ipranges-api )
+Description: CloudFront website that returns AWS IP prefixes ( https://github.com/aws-samples/aws-ipranges-api ) (uksb-shhz98vv80) (tag:cloudFront)
 
 Metadata:
   License:

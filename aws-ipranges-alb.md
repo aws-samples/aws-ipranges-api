@@ -1,8 +1,14 @@
 ## Application Load Balancer (aws-ipranges-alb)
 
+### HTTPS Support
+To use [Application Load Balancer (ALB)](https://aws.amazon.com/elasticloadbalancing/application-load-balancer/) with HTTPS, either [request a public certificate](https://docs.aws.amazon.com/acm/latest/userguide/acm-public-certificates.html) or [import a certificate](https://docs.aws.amazon.com/acm/latest/userguide/import-certificate.html) into [AWS Certificate Manager](https://aws.amazon.com/certificate-manager/) first.
 
-## Deployment via CloudFormation console
+
+## Deploying using CloudFormation console
 Download [`aws-ipranges-alb.yaml`](aws-ipranges-alb.yaml) file and login to AWS [CloudFormation console](https://console.aws.amazon.com/cloudformation/home#/stacks/create/template). Choose **Create Stack**, **Upload a template file**, **Choose File**, select `aws-ipranges-alb.yaml` and choose **Next**.
+
+
+
 
 ### CloudFormation Parameters
 Specify a **Stack name** and adjust parameters values as desired. Parameters options include
@@ -28,8 +34,8 @@ HTTPS listener (optional)
 
 - `certificateArn`: Certificate ARN for [HTTPS listener](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/create-https-listener.html). Leave blank not to create HTTPS listener
 - `securityPolicy`: [Security policy](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/create-https-listener.html#describe-ssl-policies) for HTTPS listener. Default is `ELBSecurityPolicy-TLS13-1-2-2021-06`
-- `redirectHTTPtoHTTPS`: option to redirect HTTP requests to HTTPS. Default is `No`
-- `sendHSTSheader`: option to send [HSTS (HTTP Strict Transport Security)](https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Strict_Transport_Security_Cheat_Sheet.html) header over HTTPS. Default is `Yes`
+- `redirectHTTPtoHTTPS`: option to redirect HTTP requests to HTTPS. Default is `Yes`
+- `hstsHeaderValue`: [HSTS (HTTP Strict Transport Security)](https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Strict_Transport_Security_Cheat_Sheet.html) response header value to send. Do not specify a value not to send HSTS header. Default is `max-age=31536000; includeSubDomains`
 
 Continue **Next** with [Configure stack options](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-console-add-tags.html), [Review](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-using-console-create-stack-review.html) settings, and click **Create Stack** to launch your stack. 
 

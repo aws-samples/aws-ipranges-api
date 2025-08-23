@@ -88,6 +88,7 @@ Parameters:
       - AMAZON_APPFLOW
       - AMAZON_CONNECT
       - API_GATEWAY
+      - AURORA_DSQL
       - CHIME_MEETINGS
       - CHIME_VOICECONNECTOR
       - CLOUD9
@@ -99,6 +100,7 @@ Parameters:
       - EC2
       - EC2_INSTANCE_CONNECT
       - GLOBALACCELERATOR
+      - IVS_LOW_LATENCY
       - IVS_REALTIME
       - KINESIS_VIDEO_STREAMS
       - MEDIA_PACKAGE_V2

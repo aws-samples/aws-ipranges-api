@@ -9,8 +9,10 @@ Download [`aws-ipranges-api.yaml`](aws-ipranges-api.yaml) file and login to AWS 
 Specify a **Stack name** and adjust parameters values as desired. Parameters options include
 
 HTTP API
-- `allowNetworks`: Source IP prefixes that are authorized to use API separated by commas. Default is `0.0.0.0/0`
 - `awsServices`: Names of AWS service to return by root URL separated by commas. Default is `CLOUDFRONT_ORIGIN_FACING`
+- `allowNetworks`: Source IPv4 prefixes that are authorized to use API separated by commas. Default is `0.0.0.0/0`
+- `allowIPv6Networks`: Source IPv6 prefixes that are authorized to use API separated by commas. Default is `::/0`
+- `ipAddressType`: [IP address type](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-ip-address-type.html), either `IPv4` or `IPv4-and-IPv6`. Default is `IPv4`
 
 Lambda
 - `pythonRuntime`: Python [runtime version](https://docs.aws.amazon.com/lambda/latest/dg/lambda-python.html). Default is `python3.13`

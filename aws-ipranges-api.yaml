@@ -27,6 +27,8 @@ Metadata:
         Parameters:
           - awsServices
           - allowNetworks
+          - allowIPv6Networks
+          - ipAddressType
       - Label:
           default: Lambda
         Parameters:
@@ -43,7 +45,12 @@ Metadata:
       awsServices:
         default: "Default AWS Service IP prefixes to return separated by commas ( https://docs.aws.amazon.com/vpc/latest/userguide/aws-ip-ranges.html#aws-ip-syntax )"
       allowNetworks:
-        default: "Allowed source IP prefixes separated by commas (e.g. 1.2.3.4/32,100.0.0.0/24). Get your IP from https://checkip.amazonaws.com "
+        default: "Allowed source IPv4 prefixes separated by commas (e.g. 1.2.3.4/32,100.0.0.0/24). Get your IPv4 address from https://checkip.amazonaws.com"
+      allowIPv6Networks:
+        default: "Allowed source IPv6 prefixes separated by commas (e.g. 1:2:3:4::/64). Get your IPv6 address (if any) from https://ifconfig.co"
+
+      ipAddressType:
+        default: IPv4 only or dual stack (IPv4-and-IPv6)
 
       pythonRuntime:
         default: Python 3 runtime version ( https://docs.aws.amazon.com/lambda/latest/dg/lambda-python.html )
@@ -56,6 +63,13 @@ Metadata:
         default: "Certificate ARN. Get from https://console.aws.amazon.com/acm/home?#/certificates/list ( aws acm list-certificates )"
       disableDefaultEndPoint:
         default: "Disable default endpoint"
+
+Mappings:
+  ipTypeMapping:
+    IPv4:
+      Value: ipv4
+    IPv4-and-IPv6:
+      Value: dualstack
 
 Parameters:
   awsServices:
@@ -92,6 +106,15 @@ Parameters:
   allowNetworks:
     Type: String
     Default: 0.0.0.0/0
+  allowIPv6Networks:
+    Type: String
+    Default: ::/0
+  ipAddressType:
+    Type: String
+    AllowedValues:
+      - IPv4
+      - IPv4-and-IPv6
+    Default: IPv4
 
   pythonRuntime:
     Type: String
@@ -548,6 +571,7 @@ Resources:
       Environment:
         Variables:
           ALLOWED_NETWORKS: !Ref allowNetworks
+          ALLOWED_IPv6_NETWORKS: !Ref allowIPv6Networks
       Runtime: !Ref pythonRuntime
       Timeout: 5
       Architectures:
@@ -565,19 +589,32 @@ Resources:
           if allowed_networks == ['']: 
             allowed_networks = ['0.0.0.0/0']
 
+          allowed_ipv6_networks = os.getenv('ALLOWED_IPv6_NETWORKS', '::/0').split(',')
+          if allowed_ipv6_networks == ['']:
+            allowed_ipv6_networks = ['::/0']
+
           # See https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-lambda-authorizer.html for payload format
           def lambda_handler(event, context):
             sourceIp = event['requestContext']['http']['sourceIp']
-
-            print(f'Source IP:{sourceIp}, Allowed Networks:{allowed_networks}')
             source_address = ipaddress.ip_address(sourceIp)
-            for allowed in allowed_networks:
-              if source_address in ipaddress.ip_network(allowed, False):
-                print('Authorized: Yes')
-                return {
-                  "isAuthorized": True
-                }
-            
+
+            if source_address.version == 4:           
+              print(f'Source IP:{sourceIp}, Allowed Networks:{allowed_networks}')
+              for allowed in allowed_networks:
+                if source_address in ipaddress.ip_network(allowed, False):
+                  print('Authorized: Yes')
+                  return {
+                    "isAuthorized": True
+                  }
+            else:
+              print(f'Source IP:{sourceIp}, Allowed Networks:{allowed_ipv6_networks}')
+              for allowed in allowed_ipv6_networks:
+                if source_address in ipaddress.ip_network(allowed, False):
+                  print('Authorized: Yes')
+                  return {
+                    "isAuthorized": True
+                  }
+
             print('Authorized: No')
             return {
               "isAuthorized": False
@@ -609,6 +646,7 @@ Resources:
       Description: !Sub "[${AWS::StackName}] - returns AWS IP prefixes from ip-ranges.json"
       ProtocolType: HTTP
       DisableExecuteApiEndpoint: !If [enableDefaultEndPoint, false, true]
+      IpAddressType: !FindInMap [ipTypeMapping, !Ref ipAddressType, Value]
       Tags:
         StackName: !Ref AWS::StackName
         StackId: !Ref AWS::StackId
@@ -720,6 +758,7 @@ Resources:
         - CertificateArn: !Ref certificateArn
           EndpointType: REGIONAL
           SecurityPolicy: TLS_1_2
+          IpAddressType: !FindInMap [ipTypeMapping, !Ref ipAddressType, Value]
       Tags:
         StackName: !Ref AWS::StackName
         StackId: !Ref AWS::StackId

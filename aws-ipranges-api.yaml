@@ -86,6 +86,7 @@ Parameters:
       - CLOUDFRONT
       - CLOUDFRONT_ORIGIN_FACING
       - CODEBUILD
+      - DATADEPOT
       - DYNAMODB
       - EBS
       - EC2
@@ -580,7 +581,6 @@ Resources:
         ZipFile: |
           # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
           # SPDX-License-Identifier: MIT-0
-
           import os
           import ipaddress
 

@@ -95,6 +95,7 @@ Parameters:
       - CLOUDFRONT
       - CLOUDFRONT_ORIGIN_FACING
       - CODEBUILD
+      - DATADEPOT
       - DYNAMODB
       - EBS
       - EC2

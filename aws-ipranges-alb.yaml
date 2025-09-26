@@ -107,6 +107,7 @@ Parameters:
       - CLOUDFRONT
       - CLOUDFRONT_ORIGIN_FACING
       - CODEBUILD
+      - DATADEPOT
       - DYNAMODB
       - EBS
       - EC2
@@ -199,13 +200,7 @@ Parameters:
       - internet-facing
       - internal
     Default: internet-facing
-  ipAddressType:
-    Type: String
-    AllowedValues:
-      - IPv4
-      - IPv4-and-IPv6
-      - IPv6
-    Default: IPv4
+
   vpc:
     Type: AWS::EC2::VPC::Id
     Description: "https://console.aws.amazon.com/vpcconsole/home#vpcs:"

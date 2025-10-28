@@ -201,6 +201,15 @@ Parameters:
       - internal
     Default: internet-facing
 
+  ipAddressType:
+    Type: String
+    Description: IPv4 only, IPv6 only or dual stack (IPv4-and-IPv6)
+    AllowedValues:
+      - IPv4
+      - IPv6
+      - IPv4-and-IPv6
+    Default: IPv4
+
   vpc:
     Type: AWS::EC2::VPC::Id
     Description: "https://console.aws.amazon.com/vpcconsole/home#vpcs:"

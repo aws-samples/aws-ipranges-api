@@ -15,7 +15,7 @@ HTTP API
 - `ipAddressType`: [IP address type](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-ip-address-type.html), either `IPv4` or `IPv4-and-IPv6`. Default is `IPv4`
 
 Lambda
-- `pythonRuntime`: Python [runtime version](https://docs.aws.amazon.com/lambda/latest/dg/lambda-python.html). Default is `python3.13`
+- `pythonRuntime`: Python [runtime version](https://docs.aws.amazon.com/lambda/latest/dg/lambda-python.html). Default is `python3.14`
 - `cpuArchitecture`: [instruction set architecture](https://docs.aws.amazon.com/lambda/latest/dg/foundation-arch.html), either `x86_64` or `arm64`. Default is `arm64`
 
 

@@ -15,11 +15,11 @@ Specify a **Stack name** and adjust parameters values as desired. Parameters opt
 
 ALB API
 - `awsServices`: Names of AWS service to return by root URL separated by commas. Default is `CLOUDFRONT_ORIGIN_FACING`
-- `allowIPv4prefix`: Source IPv4 prefix allowed to access ALB. Default is `0.0.0.0/0`
-- `allowIPv6prefix`: Source IPv6 prefix allowed to access ALB. Default is `::/0`
+- `allowIPv4prefix`: Source IPv4 prefix allowed to access ALB separated by commas. Default is `0.0.0.0/0`
+- `allowIPv6prefix`: Source IPv6 prefix allowed to access ALB separated by commas. Default is `::/0`
 
 Lambda
-- `pythonRuntime`: Python [runtime version](https://docs.aws.amazon.com/lambda/latest/dg/lambda-python.html). Default is `python3.13`
+- `pythonRuntime`: Python [runtime version](https://docs.aws.amazon.com/lambda/latest/dg/lambda-python.html). Default is `python3.14`
 - `cpuArchitecture`: [instruction set architecture](https://docs.aws.amazon.com/lambda/latest/dg/foundation-arch.html), either `x86_64` or `arm64`. Default is `arm64`
 
 Load Balancer
